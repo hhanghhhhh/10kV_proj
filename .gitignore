@@ -1,0 +1,17 @@
+# Local builds
+build/
+Debug/
+.launches/
+.settings/
+validation/
+.vscode/
+
+# anlu fpga
+*_Runs/
+*.rpt
+*.tsm
+*.log
+
+
+
+
