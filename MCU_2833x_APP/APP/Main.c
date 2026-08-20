@@ -65,6 +65,34 @@ static void Main_ConfigCpuTimer0(void)
     CpuTimer0Regs.TCR.bit.TRB = 1U;
 }
 
+/* 处理最新统计快照，发布Modbus数据后回复AVG_DONE。 */
+static void Main_ProcessAd7982Result(void)
+{
+    float32 current_value;
+    float32 average_value;
+
+    // 实时值
+    current_value = (float32)app_context.ad7982.live_adc_value;
+    mgmd_stSCIRx.isamp.f32 = current_value;
+
+    // 平均值处理
+    if (app_context.ad7982.calc_done == 1U)
+    {
+        app_context.ad7982.calc_done = 0U;
+
+        average_value = app_context.ad7982.done_sum /
+                        (float32)app_context.ad7982.done_count;
+        app_context.ad7982.final_average = average_value;
+
+        mgmd_stSCIRx.isamp_avg.f32 = average_value;
+        app_context.ad7982.calc_done = 0U;
+
+        /* 报文很少，此处阻塞到发送成功或超时。 */
+        (void)CanSample_SendCompleted(&app_context.can_sample,
+                                      CAN_SAMPLE_DONE_OK);
+    }
+}
+
 /***********************************************************************
  * Function Name : main
  * Arguments     :
@@ -112,6 +140,8 @@ void main(void)
     while (1)
     {
         // FpgaMainReadUpdate();
+
+        Main_ProcessAd7982Result();
 
         for (index = 0; index < SOCKET_NUM_USE; index++)
         {

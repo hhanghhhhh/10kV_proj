@@ -70,10 +70,10 @@ void md_vPrepareData(void)
 
    //0x1100
    //data
-   md_r2_buf[0x00] = &mgmd_stSCIRx.reserve;
-   md_r2_buf[0x01] = &mgmd_stSCIRx.reserve;
-   md_r2_buf[0x02] = &mgmd_stSCIRx.reserve;
-   md_r2_buf[0x03] = &mgmd_stSCIRx.reserve;
+   md_r2_buf[0x00] = &mgmd_stSCIRx.isamp.u16.H;
+   md_r2_buf[0x01] = &mgmd_stSCIRx.isamp.u16.L;
+   md_r2_buf[0x02] = &mgmd_stSCIRx.isamp_avg.u16.H;
+   md_r2_buf[0x03] = &mgmd_stSCIRx.isamp_avg.u16.L;
    md_r2_buf[0x04] = &mgmd_stSCIRx.reserve;
    md_r2_buf[0x05] = &mgmd_stSCIRx.reserve;
    md_r2_buf[0x06] = &mgmd_stSCIRx.reserve;

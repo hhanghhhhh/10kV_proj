@@ -28,13 +28,8 @@ Uint16 CanSample_Init(CanSample_Context_t *context)
 {
     context->request_src = 0U;
     context->request_seq = 0U;
-    context->request_valid = 0U;
-    context->done_request_src = 0U;
-    context->done_request_seq = 0U;
-    context->done_pending = 0U;
     context->start_count = 0UL;
     context->invalid_count = 0UL;
-    context->done_overrun_count = 0UL;
 
     CanSample_InitGpio();
     if (CanSample_InitController() != CAN_SAMPLE_STATUS_SUCCESS)
@@ -80,40 +75,12 @@ Uint16 CanSample_HandleRxInterrupt(CanSample_Context_t *context)
     return 0U;
 }
 
-/* 将刚完成测量对应的请求信息保存到独立完成快照。 */
-void CanSample_LatchCompletedRequest(CanSample_Context_t *context)
-{
-    if (context->request_valid == 0U)
-    {
-        return;
-    }
-
-    if (context->done_pending == 0U)
-    {
-        context->done_request_src = context->request_src;
-        context->done_request_seq = context->request_seq;
-        context->done_pending = 1U;
-    }
-    else
-    {
-        /* 单槽快照优先保护尚未发送的上一轮完成通知。 */
-        context->done_overrun_count++;
-    }
-
-    context->request_valid = 0U;
-}
-
 /* 阻塞发送AVG_DONE，等待邮箱空闲和发送完成均带超时。 */
 Uint16 CanSample_SendCompleted(CanSample_Context_t *context, Uint16 status)
 {
     struct ECAN_REGS can_shadow;
     Uint32 timeout_count;
     Uint16 can_id;
-
-    if (context->done_pending == 0U)
-    {
-        return CAN_SAMPLE_STATUS_NO_REQUEST;
-    }
 
     timeout_count = CAN_SAMPLE_TX_TIMEOUT;
     while (((ECanaRegs.CANTRS.all & CAN_SAMPLE_TX_MASK) != 0UL) &&
@@ -128,7 +95,7 @@ Uint16 CanSample_SendCompleted(CanSample_Context_t *context, Uint16 status)
 
     can_id = CanSample_BuildId(CAN_SAMPLE_TYPE_AVG_DONE,
                                CAN_SAMPLE_NODE_ID,
-                               context->done_request_src);
+                               context->request_src);
 
     /* 修改MSGID前暂时关闭TX邮箱，其他RX邮箱保持使能。 */
     can_shadow.CANME.all = ECanaRegs.CANME.all;
@@ -141,7 +108,7 @@ Uint16 CanSample_SendCompleted(CanSample_Context_t *context, Uint16 status)
     ECanaMboxes.MBOX0.MSGCTRL.bit.DLC = 2U;
     ECanaMboxes.MBOX0.MDL.all = 0UL;
     ECanaMboxes.MBOX0.MDH.all = 0UL;
-    ECanaMboxes.MBOX0.MDL.byte.BYTE0 = context->done_request_seq & 0x00FFU;
+    ECanaMboxes.MBOX0.MDL.byte.BYTE0 = context->request_seq & 0x00FFU;
     ECanaMboxes.MBOX0.MDL.byte.BYTE1 = status & 0x00FFU;
 
     can_shadow.CANME.all |= CAN_SAMPLE_TX_MASK;
@@ -160,9 +127,7 @@ Uint16 CanSample_SendCompleted(CanSample_Context_t *context, Uint16 status)
         return CAN_SAMPLE_STATUS_TIMEOUT;
     }
 
-    /* CANTA写1清零，发送确认后释放完成快照。 */
     ECanaRegs.CANTA.all = CAN_SAMPLE_TX_MASK;
-    context->done_pending = 0U;
     return CAN_SAMPLE_STATUS_SUCCESS;
 }
 
@@ -342,7 +307,6 @@ static Uint16 CanSample_ProcessMailbox(CanSample_Context_t *context,
     /* 新的有效请求直接覆盖尚未完成的旧测量请求。 */
     context->request_src = src_id;
     context->request_seq = data_low.byte.BYTE0 & 0x00FFU;
-    context->request_valid = 1U;
     context->start_count++;
     return 1U;
 }

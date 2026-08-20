@@ -8,12 +8,12 @@
  * MREVTA触发DMA CH2将DRR2/DRR1直接写入模块Context。
  * DMA CH1保留给片内ADC，本模块不得修改。
  */
-#define AD7982_EPWM_TBPRD              (1499U)
-#define AD7982_MCBSP_CLKGDV            (3U)
-#define AD7982_DMA_PERINTSEL_MREVTA    (15U)
-#define AD7982_DMA_BURST_SIZE          (1U)
-#define AD7982_DMA_TRANSFER_SIZE       (0U)
-#define AD7982_MCBSP_READY_TIMEOUT     (65535U)
+#define AD7982_EPWM_TBPRD (1499U)
+#define AD7982_MCBSP_CLKGDV (3U)
+#define AD7982_DMA_PERINTSEL_MREVTA (15U)
+#define AD7982_DMA_BURST_SIZE (1U)
+#define AD7982_DMA_TRANSFER_SIZE (0U)
+#define AD7982_MCBSP_READY_TIMEOUT (65535U)
 
 static void Ad7982_InitGpio(void);
 static void Ad7982_InitMcbspa(void);
@@ -30,8 +30,16 @@ void Ad7982_Init(Ad7982_Context_t *context)
     context->raw_adc_value = 0U;
     context->frame_count = 0U;
     context->launch_overrun_count = 0U;
-    context->sample_valid = 0U;
     context->start_error = 0U;
+    context->live_adc_value = (int32)0;
+    context->sum_adc = 0.0F;
+    context->count_adc = 0UL;
+    context->target_count = AD7982_TARGET_COUNT_20MS;
+    context->avg_active = 0U;
+    context->done_sum = 0.0F;
+    context->done_count = 0UL;
+    context->calc_done = 0U;
+    context->final_average = 0.0F;
 
     Ad7982_InitMcbspa();
     Ad7982_InitGpio();
@@ -95,14 +103,44 @@ void Ad7982_StartFrame(Ad7982_Context_t *context)
     }
 }
 
+/* 收到CAN触发后清零活动累加器，不修改完成快照。 */
+void Ad7982_StartAverage(Ad7982_Context_t *context)
+{
+    context->sum_adc = 0.0F;
+    context->count_adc = 0UL;
+    context->avg_active = 1U;
+}
+
+/* 完成18-bit符号扩展、实时值更新和统计窗口累加。 */
 void Ad7982_OnDmaComplete(Ad7982_Context_t *context)
 {
+    Uint32 raw18;
+    int32 adc_value;
+
     context->frame_count++;
 
-    /* 首帧发生在第一个有效CNV上升沿之前，从第二帧开始标记有效。 */
-    if (context->frame_count >= 2U)
+    raw18 = (context->raw_adc_value >> 14U) & 0x3FFFFUL;
+    adc_value = (int32)raw18;
+    if ((raw18 & 0x20000UL) != 0UL)
     {
-        context->sample_valid = 1U;
+        adc_value -= (int32)0x40000UL;
+    }
+    context->live_adc_value = adc_value;
+
+    if (context->avg_active == 0U)
+    {
+        return;
+    }
+
+    context->sum_adc += (float32)adc_value;
+    context->count_adc++;
+    if (context->count_adc >= context->target_count)
+    {
+        /* 最新完成结果直接覆盖旧快照，calc_done最后置位。 */
+        context->done_sum = context->sum_adc;
+        context->done_count = context->count_adc;
+        context->avg_active = 0U;
+        context->calc_done = 1U;
     }
 }
 

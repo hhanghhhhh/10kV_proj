@@ -12,8 +12,11 @@ Uint32 max_task_run_time = 0;
 
 interrupt void Interrupt_CanA0Isr(void)
 {
-    /* 有效START_AVG的请求信息由CAN模块保存，统计状态后续在此处接入。 */
-    (void)CanSample_HandleRxInterrupt(&app_context.can_sample);
+    if (CanSample_HandleRxInterrupt(&app_context.can_sample) != 0U)
+    {
+        /* 新请求无条件放弃当前未完成窗口并重新计数。 */
+        Ad7982_StartAverage(&app_context.ad7982);
+    }
     PieCtrlRegs.PIEACK.all = PIEACK_GROUP9;
 }
 
@@ -28,7 +31,6 @@ interrupt void Interrupt_Ad7982EPwm1Isr(void)
 
 interrupt void Interrupt_Ad7982DmaCh2Isr(void)
 {
-    /* 原始数据已由DMA直接写入Context，此处只更新完成状态。 */
     Ad7982_OnDmaComplete(&app_context.ad7982);
     PieCtrlRegs.PIEACK.all = PIEACK_GROUP7;
 }
