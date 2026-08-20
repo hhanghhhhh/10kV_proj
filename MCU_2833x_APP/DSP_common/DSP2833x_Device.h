@@ -126,9 +126,9 @@ extern cregister volatile unsigned int IER;
 #define DSP28_ECAP6  0
 #define DSP28_EQEP1  1
 #define DSP28_EQEP2  0
-#define DSP28_ECANA  0
+#define DSP28_ECANA  1
 #define DSP28_ECANB  1
-#define DSP28_MCBSPA 0
+#define DSP28_MCBSPA 1
 #define DSP28_MCBSPB 1
 #define DSP28_SPIA   0
 #define DSP28_SCIA   0

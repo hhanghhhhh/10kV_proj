@@ -27,7 +27,7 @@ static void Main_InitInterruptController(void)
     InitPieVectTable();
     EALLOW;
     PieVectTable.TINT0 = &INT6;
-    PieVectTable.ECAN0INTB = &ISR_CanbInt0;
+    PieVectTable.ECAN0INTA = &Interrupt_CanA0Isr;
     PieVectTable.EPWM1_INT = &Interrupt_Ad7982EPwm1Isr;
     PieVectTable.DINTCH2 = &Interrupt_Ad7982DmaCh2Isr;
     EDIS;
@@ -48,11 +48,14 @@ static void Main_EnableInterruptSources(void)
     PieCtrlRegs.PIEIER1.bit.INTx7 = 1U;
     PieCtrlRegs.PIEIER3.bit.INTx1 = 1U;
     PieCtrlRegs.PIEIER7.bit.INTx2 = 1U;
-    PieCtrlRegs.PIEIER9.bit.INTx7 = 1U; // CANbINT0
+    if (app_context.can_sample_init_status == CAN_SAMPLE_STATUS_SUCCESS)
+    {
+        PieCtrlRegs.PIEIER9.bit.INTx5 = 1U; /* eCAN-A interrupt line 0 */
+    }
     IER |= M_INT1;
     IER |= M_INT3;
     IER |= M_INT7;
-    IER |= M_INT9; // CANbINT0
+    IER |= M_INT9;
 }
 
 static void Main_ConfigCpuTimer0(void)
@@ -82,8 +85,7 @@ void main(void)
     InitGpio();
     InitSpiaGpio();
     InitSpi();
-    //    InitECanGpio();
-    //    InitECan();
+    app_context.can_sample_init_status = CanSample_Init(&app_context.can_sample);
     InitI2CGpio();
     InitI2C();
     InitAdc();

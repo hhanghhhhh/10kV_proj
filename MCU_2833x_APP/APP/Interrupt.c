@@ -5,18 +5,15 @@
 #include "DSP2833x_Examples.h" // Examples Include File
 #include "Version.h"
 #include "drv_Fpga.h"
-#include "validation/timer_interrupt_counter.h"
 
 Uint32 task_run_cnt = 0;
 Uint32 task_run_time = 0;
 Uint32 max_task_run_time = 0;
 
-extern void HH_test_INT(void);
-
-// CANbINT0
-interrupt void ISR_CanbInt0(void)
+interrupt void Interrupt_CanA0Isr(void)
 {
-    //    RecvCmdFormCtrlBoard();  //主控板报文解析
+    /* 有效START_AVG的请求信息由CAN模块保存，统计状态后续在此处接入。 */
+    (void)CanSample_HandleRxInterrupt(&app_context.can_sample);
     PieCtrlRegs.PIEACK.all = PIEACK_GROUP9;
 }
 
@@ -50,7 +47,6 @@ interrupt void INT6(void)
     // 写 fpga 寄存器
     // FpgaISRWriteUpdate();
 
-    TimerInterruptCounter_OnTick();
     task_run_cnt++;
     task_run_time = TIMER_CNT_MAX - NOW_TIMER_CNT;
     if (task_run_time > max_task_run_time)
