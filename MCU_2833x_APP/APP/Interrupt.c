@@ -1,5 +1,7 @@
 #include "drv_GlobalVar.h"
-#include "Main.h"
+#include "app_context.h"
+#include "task_sampling.h"
+#include "task_scope.h"
 #include "drv_Adc.h"
 #include "DSP2833x_Device.h"   // Header file Include File
 #include "DSP2833x_Examples.h" // Examples Include File
@@ -15,7 +17,7 @@ interrupt void Interrupt_CanA0Isr(void)
     if (CanSample_HandleRxInterrupt(&app_context.can_sample) != 0U)
     {
         /* 新请求无条件放弃当前未完成窗口并重新计数。 */
-        Ad7982_StartAverage(&app_context.ad7982);
+        SamplingTask_StartAverage(SAMPLING_SOURCE_CAN);
     }
     PieCtrlRegs.PIEACK.all = PIEACK_GROUP9;
 }
@@ -32,6 +34,11 @@ interrupt void Interrupt_Ad7982EPwm1Isr(void)
 interrupt void Interrupt_Ad7982DmaCh2Isr(void)
 {
     Ad7982_OnDmaComplete(&app_context.ad7982);
+    DSO_CaptureSample((float32)app_context.ad7982.live_adc_value);
+    if (app_context.ad7982.calc_done != 0U)
+    {
+        DSO_CaptureStop();
+    }
     PieCtrlRegs.PIEACK.all = PIEACK_GROUP7;
 }
 

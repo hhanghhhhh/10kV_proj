@@ -1,14 +1,13 @@
 #include "drv_GlobalVar.h"
 #include "Main.h"
 #include "Interrupt.h"
+#include "task_sampling.h"
 #include "W5500/drv_Spi.h"
 #include "W5500/udp.h"
 #include "task_eeprom_param.h"
-#include "app_boot_eeprom.h"
 #include "app_boot.h"
 #include "DSP2833x_Device.h"   // Header file Include File
 #include "DSP2833x_Examples.h" // Examples Include File
-#include "drv_ModbusData.h"
 #include "drv_Fpga.h"
 #include "Version.h"
 
@@ -63,34 +62,6 @@ static void Main_ConfigCpuTimer0(void)
     CpuTimer0Regs.TCR.bit.TRB = 1U;
 }
 
-/* 处理最新统计快照，发布Modbus数据后回复AVG_DONE。 */
-static void Main_ProcessAd7982Result(void)
-{
-    float32 current_value;
-    float32 average_value;
-
-    // 实时值
-    current_value = (float32)app_context.ad7982.live_adc_value;
-    mgmd_stSCIRx.isamp = current_value;
-
-    // 平均值处理
-    if (app_context.ad7982.calc_done == 1U)
-    {
-        app_context.ad7982.calc_done = 0U;
-
-        average_value = app_context.ad7982.done_sum /
-                        (float32)app_context.ad7982.done_count;
-        app_context.ad7982.final_average = average_value;
-
-        mgmd_stSCIRx.isamp_avg = average_value;
-        app_context.ad7982.calc_done = 0U;
-
-        /* 报文很少，此处阻塞到发送成功或超时。 */
-        (void)CanSample_SendCompleted(&app_context.can_sample,
-                                      CAN_SAMPLE_DONE_OK);
-    }
-}
-
 /***********************************************************************
  * Function Name : main
  * Arguments     :
@@ -124,6 +95,7 @@ void main(void)
 
     // USER Init
     InitUserPara();
+    SamplingTask_Init();
 
     Main_ConfigCpuTimer0();
     Main_EnableInterruptSources();
@@ -139,8 +111,6 @@ void main(void)
     {
         // FpgaMainReadUpdate();
 
-        Main_ProcessAd7982Result();
-
         for (index = 0; index < SOCKET_NUM_USE; index++)
         {
             // 第一个参数为socket号，直接用0 1 2...完后排列  最多8个
@@ -152,22 +122,9 @@ void main(void)
 
         CheckW5500Status();
 
-        if (mgmd_stSCIRx.jump_cmd == JUMP_TO_BOOT)
-        {
-            mgmd_stSCIRx.jump_cmd = 0;
-            /* 升级标志保存成功后，通过看门狗复位进入Boot。 */
-            g_app_boot_eeprom_param.download_flag = APP_BOOT_DOWNLOAD_FLAG;
-            DisableDog();
-            if (AppBootEeprom_Save() == 0U)
-            {
-                AppBoot_ResetToBoot();
-            }
-            else
-            {
-                g_app_boot_eeprom_param.download_flag = APP_BOOT_DOWNLOAD_CLEAR;
-                EnableWDog();
-            }
-        }
+        SamplingTask_Run();
+
+        AppBoot_Process();
 
         EepromParam_Process();
 

@@ -44,14 +44,15 @@ typedef struct
     Uint16 dataok;
 
     // 常规参数
-    Uint16 power_ctrl;
-    Uint16 test_mode;
-    Uint16 autosample;
-
-    float32 isamp;
-    float32 vsamp;
+    float32 isamp_live;
     float32 isamp_avg;
-    float32 vsamp_avg;
+
+    /* 采样配置参数，暂按float32与上位机交互。 */
+    float32 i_range;
+    float32 tpl0501_value;
+    float32 ad5290_value;
+    float32 nplc;
+    Uint16 sample_trigger;
 
     Uint16 autorange;
 

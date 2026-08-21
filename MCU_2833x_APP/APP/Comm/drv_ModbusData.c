@@ -22,14 +22,14 @@ void InitModbusData()
     memset(&mgmd_stSCIRx, 0, sizeof(mgmd_stSCIRx));
 
     p->program_type = IN_APP;
-
-    //    p->nplc.f32 = 1;
+    p->i_range = 0.0F;
+    p->tpl0501_value = 0.0F;
+    p->ad5290_value = 0.0F;
+    p->nplc = 1.0F;
 }
 
 void md_vPrepareData(void)
 {
-    Uint16 i = 0;
-
     // 0x1000
     // info
     md_r1_buf[0x00] = &mgmd_stSCIRx.dataok;
@@ -55,10 +55,10 @@ void md_vPrepareData(void)
 
     // 0x1100
     // data
-    md_r2_buf[0x00] = F32_H(mgmd_stSCIRx.isamp);
-    md_r2_buf[0x01] = F32_L(mgmd_stSCIRx.isamp);
-    md_r2_buf[0x02] = &mgmd_stSCIRx.reserve;
-    md_r2_buf[0x03] = &mgmd_stSCIRx.reserve;
+    md_r2_buf[0x00] = F32_H(mgmd_stSCIRx.isamp_live);
+    md_r2_buf[0x01] = F32_L(mgmd_stSCIRx.isamp_live);
+    md_r2_buf[0x02] = F32_H(mgmd_stSCIRx.isamp_avg);
+    md_r2_buf[0x03] = F32_L(mgmd_stSCIRx.isamp_avg);
     md_r2_buf[0x04] = &mgmd_stSCIRx.reserve;
     md_r2_buf[0x05] = &mgmd_stSCIRx.reserve;
     md_r2_buf[0x06] = &mgmd_stSCIRx.reserve;
@@ -115,15 +115,15 @@ void md_vPrepareData(void)
 
     // 0x3000
     // parameter
-    md_rw1_buf[0x00] = &mgmd_stSCIRx.reserve; // v_set.u16.H
-    md_rw1_buf[0x01] = &mgmd_stSCIRx.reserve; // v_set.u16.L
-    md_rw1_buf[0x02] = &mgmd_stSCIRx.reserve;
-    md_rw1_buf[0x03] = &mgmd_stSCIRx.reserve;
-    md_rw1_buf[0x04] = &mgmd_stSCIRx.reserve;
-    md_rw1_buf[0x05] = &mgmd_stSCIRx.reserve;
-    md_rw1_buf[0x06] = &mgmd_stSCIRx.reserve;
-    md_rw1_buf[0x07] = &mgmd_stSCIRx.reserve;
-    md_rw1_buf[0x08] = &mgmd_stSCIRx.reserve;
+    md_rw1_buf[0x00] = F32_H(mgmd_stSCIRx.i_range);
+    md_rw1_buf[0x01] = F32_L(mgmd_stSCIRx.i_range);
+    md_rw1_buf[0x02] = F32_H(mgmd_stSCIRx.tpl0501_value);
+    md_rw1_buf[0x03] = F32_L(mgmd_stSCIRx.tpl0501_value);
+    md_rw1_buf[0x04] = F32_H(mgmd_stSCIRx.ad5290_value);
+    md_rw1_buf[0x05] = F32_L(mgmd_stSCIRx.ad5290_value);
+    md_rw1_buf[0x06] = F32_H(mgmd_stSCIRx.nplc);
+    md_rw1_buf[0x07] = F32_L(mgmd_stSCIRx.nplc);
+    md_rw1_buf[0x08] = &mgmd_stSCIRx.sample_trigger;
     md_rw1_buf[0x09] = &mgmd_stSCIRx.reserve;
     md_rw1_buf[0x0A] = &mgmd_stSCIRx.reserve;
     md_rw1_buf[0x0B] = &mgmd_stSCIRx.reserve;
