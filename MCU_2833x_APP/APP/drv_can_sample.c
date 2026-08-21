@@ -2,26 +2,22 @@
 #include "DSP2833x_Device.h"
 #include "DSP2833x_Examples.h"
 
-#define CAN_SAMPLE_TYPE_START_AVG       (0x01U)
-#define CAN_SAMPLE_TYPE_AVG_DONE        (0x02U)
-#define CAN_SAMPLE_RX_LOCAL_MAILBOX     (16U)
-#define CAN_SAMPLE_RX_BROADCAST_MAILBOX (17U)
-#define CAN_SAMPLE_TX_MAILBOX           (0U)
-#define CAN_SAMPLE_RX_LOCAL_MASK        (1UL << CAN_SAMPLE_RX_LOCAL_MAILBOX)
-#define CAN_SAMPLE_RX_BROADCAST_MASK    (1UL << CAN_SAMPLE_RX_BROADCAST_MAILBOX)
-#define CAN_SAMPLE_TX_MASK              (1UL << CAN_SAMPLE_TX_MAILBOX)
-#define CAN_SAMPLE_SOURCE_ID_MASK       (0x0F0UL << 18U)
-#define CAN_SAMPLE_LAM_IDE_COMPARE      (0x80000000UL)
-#define CAN_SAMPLE_CONFIG_TIMEOUT       (65535U)
-#define CAN_SAMPLE_TX_TIMEOUT           (1000000UL)
+#define CAN_SAMPLE_TYPE_START_AVG (0x01U)
+#define CAN_SAMPLE_TYPE_AVG_DONE (0x02U)
+#define CAN_SAMPLE_RX_LOCAL_MAILBOX (16U)
+#define CAN_SAMPLE_TX_MAILBOX (0U)
+#define CAN_SAMPLE_RX_LOCAL_MASK (1UL << CAN_SAMPLE_RX_LOCAL_MAILBOX)
+#define CAN_SAMPLE_TX_MASK (1UL << CAN_SAMPLE_TX_MAILBOX)
+#define CAN_SAMPLE_SOURCE_ID_MASK (0x0F0UL << 18U)
+#define CAN_SAMPLE_LAM_IDE_COMPARE (0x80000000UL)
+#define CAN_SAMPLE_CONFIG_TIMEOUT (65535U)
+#define CAN_SAMPLE_TX_TIMEOUT (1000000UL)
 
 static Uint16 CanSample_BuildId(Uint16 type, Uint16 src_id, Uint16 dst_id);
 static void CanSample_InitGpio(void);
 static Uint16 CanSample_InitController(void);
 static void CanSample_InitMailboxes(void);
-static Uint16 CanSample_ProcessMailbox(CanSample_Context_t *context,
-                                       volatile struct MBOX *mailbox,
-                                       Uint32 mailbox_mask);
+static Uint16 CanSample_ProcessMailbox(CanSample_Context_t *context);
 
 /* 初始化模块状态及采样板CAN通信资源。 */
 Uint16 CanSample_Init(CanSample_Context_t *context)
@@ -41,38 +37,15 @@ Uint16 CanSample_Init(CanSample_Context_t *context)
     return CAN_SAMPLE_STATUS_SUCCESS;
 }
 
-/* 按MIV0处理本次CAN-A中断指向的接收邮箱。 */
+/* 处理MBOX16的START_AVG单播报文。 */
 Uint16 CanSample_HandleRxInterrupt(CanSample_Context_t *context)
 {
-    union CANGIF0_REG interrupt_flags;
-    Uint32 pending_mailboxes;
-
-    interrupt_flags.all = ECanaRegs.CANGIF0.all;
-    if (interrupt_flags.bit.GMIF0 == 0U)
+    if ((ECanaRegs.CANRMP.all & CAN_SAMPLE_RX_LOCAL_MASK) == 0UL)
     {
         return 0U;
     }
 
-    pending_mailboxes = ECanaRegs.CANRMP.all;
-    if ((interrupt_flags.bit.MIV0 == CAN_SAMPLE_RX_LOCAL_MAILBOX) &&
-        ((pending_mailboxes & CAN_SAMPLE_RX_LOCAL_MASK) != 0UL))
-    {
-        return CanSample_ProcessMailbox(
-            context,
-            &ECanaMboxes.MBOX16,
-            CAN_SAMPLE_RX_LOCAL_MASK);
-    }
-
-    if ((interrupt_flags.bit.MIV0 == CAN_SAMPLE_RX_BROADCAST_MAILBOX) &&
-        ((pending_mailboxes & CAN_SAMPLE_RX_BROADCAST_MASK) != 0UL))
-    {
-        return CanSample_ProcessMailbox(
-            context,
-            &ECanaMboxes.MBOX17,
-            CAN_SAMPLE_RX_BROADCAST_MASK);
-    }
-
-    return 0U;
+    return CanSample_ProcessMailbox(context);
 }
 
 /* 阻塞发送AVG_DONE，等待邮箱空闲和发送完成均带超时。 */
@@ -209,43 +182,29 @@ static Uint16 CanSample_InitController(void)
     return CAN_SAMPLE_STATUS_SUCCESS;
 }
 
-/* 配置AVG_DONE发送邮箱及START_AVG单播、广播接收邮箱。 */
+/* 配置AVG_DONE发送邮箱和START_AVG单播接收邮箱。 */
 static void CanSample_InitMailboxes(void)
 {
     struct ECAN_REGS can_shadow;
     Uint16 local_id = CanSample_BuildId(CAN_SAMPLE_TYPE_START_AVG,
                                         0U,
                                         CAN_SAMPLE_NODE_ID);
-    Uint16 broadcast_id = CanSample_BuildId(CAN_SAMPLE_TYPE_START_AVG,
-                                            0U,
-                                            CAN_SAMPLE_BROADCAST_ID);
-
     EALLOW;
     ECanaRegs.CANME.all = 0UL;
 
     ECanaMboxes.MBOX0.MSGCTRL.all = 0UL;
     ECanaMboxes.MBOX16.MSGCTRL.all = 0UL;
-    ECanaMboxes.MBOX17.MSGCTRL.all = 0UL;
 
     ECanaMboxes.MBOX16.MSGID.all = 0UL;
     ECanaMboxes.MBOX16.MSGID.bit.STDMSGID = local_id;
     ECanaMboxes.MBOX16.MSGID.bit.AME = 1U;
     ECanaMboxes.MBOX16.MSGCTRL.bit.DLC = 1U;
 
-    ECanaMboxes.MBOX17.MSGID.all = 0UL;
-    ECanaMboxes.MBOX17.MSGID.bit.STDMSGID = broadcast_id;
-    ECanaMboxes.MBOX17.MSGID.bit.AME = 1U;
-    ECanaMboxes.MBOX17.MSGCTRL.bit.DLC = 1U;
-
     /* 仅忽略ID中的SrcID，Type和DstID必须匹配。 */
     ECanaLAMRegs.LAM16.all = CAN_SAMPLE_SOURCE_ID_MASK |
-                            CAN_SAMPLE_LAM_IDE_COMPARE;
-    ECanaLAMRegs.LAM17.all = CAN_SAMPLE_SOURCE_ID_MASK |
-                            CAN_SAMPLE_LAM_IDE_COMPARE;
+                             CAN_SAMPLE_LAM_IDE_COMPARE;
 
-    can_shadow.CANMD.all = 0UL;
-    can_shadow.CANMD.all = CAN_SAMPLE_RX_LOCAL_MASK |
-                           CAN_SAMPLE_RX_BROADCAST_MASK;
+    can_shadow.CANMD.all = CAN_SAMPLE_RX_LOCAL_MASK;
     ECanaRegs.CANMD.all = can_shadow.CANMD.all;
 
     ECanaRegs.CANTA.all = 0xFFFFFFFFUL;
@@ -254,51 +213,35 @@ static void CanSample_InitMailboxes(void)
 
     can_shadow.CANMIL.all = 0UL;
     ECanaRegs.CANMIL.all = can_shadow.CANMIL.all;
-    can_shadow.CANMIM.all = CAN_SAMPLE_RX_LOCAL_MASK |
-                            CAN_SAMPLE_RX_BROADCAST_MASK;
+    can_shadow.CANMIM.all = CAN_SAMPLE_RX_LOCAL_MASK;
     ECanaRegs.CANMIM.all = can_shadow.CANMIM.all;
     can_shadow.CANGIM.all = 0UL;
     can_shadow.CANGIM.bit.I0EN = 1U;
     ECanaRegs.CANGIM.all = can_shadow.CANGIM.all;
 
     can_shadow.CANME.all = CAN_SAMPLE_TX_MASK |
-                           CAN_SAMPLE_RX_LOCAL_MASK |
-                           CAN_SAMPLE_RX_BROADCAST_MASK;
+                           CAN_SAMPLE_RX_LOCAL_MASK;
     ECanaRegs.CANME.all = can_shadow.CANME.all;
     EDIS;
 }
 
-/* 读取并校验一个START_AVG邮箱，保存有效请求信息。 */
-static Uint16 CanSample_ProcessMailbox(CanSample_Context_t *context,
-                                       volatile struct MBOX *mailbox,
-                                       Uint32 mailbox_mask)
+/* 读取MBOX16并保存START_AVG请求信息。 */
+static Uint16 CanSample_ProcessMailbox(CanSample_Context_t *context)
 {
-    union CANMSGID_REG message_id;
     union CANMSGCTRL_REG message_control;
     union CANMDL_REG data_low;
     Uint16 can_id;
-    Uint16 type;
     Uint16 src_id;
-    Uint16 dst_id;
 
-    message_id.all = mailbox->MSGID.all;
-    message_control.all = mailbox->MSGCTRL.all;
-    data_low.all = mailbox->MDL.all;
-    /* RMPn写1清零，同时解除该邮箱对GMIF0的中断请求。 */
-    ECanaRegs.CANRMP.all = mailbox_mask;
+    can_id = ECanaMboxes.MBOX16.MSGID.bit.STDMSGID;
+    message_control.all = ECanaMboxes.MBOX16.MSGCTRL.all;
+    data_low.all = ECanaMboxes.MBOX16.MDL.all;
+    /* RMP16写1清零，同时解除邮箱中断请求。 */
+    ECanaRegs.CANRMP.all = CAN_SAMPLE_RX_LOCAL_MASK;
 
-    can_id = message_id.bit.STDMSGID;
-    type = (can_id >> 8U) & 0x0007U;
     src_id = (can_id >> 4U) & 0x000FU;
-    dst_id = can_id & 0x000FU;
 
-    if ((message_id.bit.IDE != 0U) ||
-        (message_control.bit.RTR != 0U) ||
-        (message_control.bit.DLC != 1U) ||
-        (type != CAN_SAMPLE_TYPE_START_AVG) ||
-        (src_id == CAN_SAMPLE_BROADCAST_ID) ||
-        ((dst_id != CAN_SAMPLE_NODE_ID) &&
-         (dst_id != CAN_SAMPLE_BROADCAST_ID)))
+    if (message_control.bit.RTR != 0U)
     {
         context->invalid_count++;
         return 0U;

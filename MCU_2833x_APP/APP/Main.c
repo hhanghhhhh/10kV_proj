@@ -12,8 +12,6 @@
 #include "drv_Fpga.h"
 #include "Version.h"
 
-extern void HH_test_main();
-extern void LED_Ctrl();
 void Init_ADC_DMA(void);
 
 App_Context_t app_context;
@@ -73,7 +71,7 @@ static void Main_ProcessAd7982Result(void)
 
     // 实时值
     current_value = (float32)app_context.ad7982.live_adc_value;
-    mgmd_stSCIRx.isamp.f32 = current_value;
+    mgmd_stSCIRx.isamp = current_value;
 
     // 平均值处理
     if (app_context.ad7982.calc_done == 1U)
@@ -84,7 +82,7 @@ static void Main_ProcessAd7982Result(void)
                         (float32)app_context.ad7982.done_count;
         app_context.ad7982.final_average = average_value;
 
-        mgmd_stSCIRx.isamp_avg.f32 = average_value;
+        mgmd_stSCIRx.isamp_avg = average_value;
         app_context.ad7982.calc_done = 0U;
 
         /* 报文很少，此处阻塞到发送成功或超时。 */

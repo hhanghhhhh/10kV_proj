@@ -4,7 +4,6 @@
 #include "TypeDefine.h"
 
 #define CAN_SAMPLE_NODE_ID             (2U)
-#define CAN_SAMPLE_BROADCAST_ID        (0x0FU)
 
 #define CAN_SAMPLE_STATUS_SUCCESS      (0U)
 #define CAN_SAMPLE_STATUS_BUSY         (1U)

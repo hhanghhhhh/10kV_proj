@@ -5,11 +5,11 @@
 #include "drv_GlobalVar.h"
 #include "DSP2833x_Examples.h"
 
-#define I2C_SUCCESS              0x0000
-#define EEPROM_CMD_COEF_1        1
-#define EEPROM_CMD_COEF_2        2
-#define EEPROM_CMD_COMM_IP_1     100
-#define EEPROM_CMD_COMM_IP_2     101
+#define I2C_SUCCESS 0x0000
+#define EEPROM_CMD_COEF_1 1
+#define EEPROM_CMD_COEF_2 2
+#define EEPROM_CMD_COMM_IP_1 100
+#define EEPROM_CMD_COMM_IP_2 101
 
 static void EepromConfig_SyncToRuntime(void)
 {
@@ -27,8 +27,8 @@ static void EepromConfig_SyncToRuntime(void)
     mgmd_stSCIRx.coef.enable.u16 = user->coef_enable;
     for (i = 0; i < APP_EEPROM_COEF_NUM; i++)
     {
-        mgmd_stSCIRx.coef.f32v_adc_p_k[i].f32 = user->coef_k[i];
-        mgmd_stSCIRx.coef.f32v_adc_p_b[i].f32 = user->coef_b[i];
+        // mgmd_stSCIRx.coef.f32v_adc_p_k[i].f32 = user->coef_k[i];
+        // mgmd_stSCIRx.coef.f32v_adc_p_b[i].f32 = user->coef_b[i];
     }
 }
 
@@ -43,8 +43,8 @@ static void EepromConfig_SyncFromRuntime(void)
     user->coef_enable = mgmd_stSCIRx.coef.enable.u16;
     for (i = 0; i < APP_EEPROM_COEF_NUM; i++)
     {
-        user->coef_k[i] = mgmd_stSCIRx.coef.f32v_adc_p_k[i].f32;
-        user->coef_b[i] = mgmd_stSCIRx.coef.f32v_adc_p_b[i].f32;
+        // user->coef_k[i] = mgmd_stSCIRx.coef.f32v_adc_p_k[i].f32;
+        // user->coef_b[i] = mgmd_stSCIRx.coef.f32v_adc_p_b[i].f32;
     }
 }
 
@@ -111,7 +111,7 @@ void EepromParam_Process(void)
     }
 
     if ((mgmd_stSCIRx.coef_mode1 == EEPROM_CMD_COEF_1) &&
-         (mgmd_stSCIRx.coef_mode2 == EEPROM_CMD_COEF_2))
+        (mgmd_stSCIRx.coef_mode2 == EEPROM_CMD_COEF_2))
     {
         mgmd_stSCIRx.coef_mode1 = 0;
         mgmd_stSCIRx.coef_mode2 = 0;

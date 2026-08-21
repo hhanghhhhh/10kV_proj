@@ -23,20 +23,11 @@ static Uint16 CanController_SendStart(CanController_Context_t *context,
 /* 初始化模块状态及触发板CAN通信资源。 */
 Uint16 CanController_Init(CanController_Context_t *context)
 {
-    Uint16 index;
-
     context->next_seq = 0U;
     context->last_request_seq = 0U;
     context->last_request_dst = 0U;
-    context->completion_pending_mask = 0U;
-    context->completion_count = 0UL;
-    context->invalid_count = 0UL;
-    context->completion_overrun_count = 0UL;
-    for (index = 0U; index < CAN_CONTROLLER_NODE_COUNT; index++)
-    {
-        context->completion_seq[index] = 0U;
-        context->completion_status[index] = 0U;
-    }
+    context->reply_received = 0U;
+    context->reply_status = 0U;
 
     CanController_InitGpio();
     if (CanController_InitCan() != CAN_CONTROLLER_STATUS_SUCCESS)
@@ -60,95 +51,51 @@ Uint16 CanController_StartUnicast(CanController_Context_t *context,
     return CanController_SendStart(context, sample_node_id);
 }
 
-/* 向广播地址提交START_AVG。 */
-Uint16 CanController_StartBroadcast(CanController_Context_t *context)
-{
-    return CanController_SendStart(context, CAN_CONTROLLER_BROADCAST_ID);
-}
-
-/* 确认中断源为MBOX16后，按SrcID保存AVG_DONE。 */
+/* 确认中断源为MBOX16后，校验并保存本次AVG_DONE。 */
 Uint16 CanController_HandleRxInterrupt(CanController_Context_t *context)
 {
-    union CANGIF0_REG interrupt_flags;
-    union CANMSGID_REG message_id;
     union CANMSGCTRL_REG message_control;
     union CANMDL_REG data_low;
     Uint16 can_id;
-    Uint16 type;
     Uint16 src_id;
-    Uint16 dst_id;
-    Uint16 source_mask;
 
-    interrupt_flags.all = ECanaRegs.CANGIF0.all;
-    if ((interrupt_flags.bit.GMIF0 == 0U) ||
-        (interrupt_flags.bit.MIV0 != CAN_CONTROLLER_RX_MAILBOX) ||
-        ((ECanaRegs.CANRMP.all & CAN_CONTROLLER_RX_MASK) == 0UL))
+    if ((ECanaRegs.CANRMP.all & CAN_CONTROLLER_RX_MASK) == 0UL)
     {
         return 0U;
     }
 
-    message_id.all = ECanaMboxes.MBOX16.MSGID.all;
+    can_id = ECanaMboxes.MBOX16.MSGID.bit.STDMSGID;
     message_control.all = ECanaMboxes.MBOX16.MSGCTRL.all;
     data_low.all = ECanaMboxes.MBOX16.MDL.all;
     /* RMP16写1清零，同时解除MBOX16对GMIF0的中断请求。 */
     ECanaRegs.CANRMP.all = CAN_CONTROLLER_RX_MASK;
 
-    can_id = message_id.bit.STDMSGID;
-    type = (can_id >> 8U) & 0x0007U;
     src_id = (can_id >> 4U) & 0x000FU;
-    dst_id = can_id & 0x000FU;
 
-    if ((message_id.bit.IDE != 0U) ||
-        (message_control.bit.RTR != 0U) ||
-        (message_control.bit.DLC != 2U) ||
-        (type != CAN_CONTROLLER_TYPE_AVG_DONE) ||
-        (src_id >= CAN_CONTROLLER_BROADCAST_ID) ||
-        (dst_id != CAN_CONTROLLER_NODE_ID))
+    if ((message_control.bit.RTR != 0U) ||
+        (src_id != context->last_request_dst) ||
+        ((data_low.byte.BYTE0 & 0x00FFU) != context->last_request_seq))
     {
-        context->invalid_count++;
         return 0U;
     }
 
-    source_mask = (Uint16)(1UL << src_id);
-    if ((context->completion_pending_mask & source_mask) == 0U)
-    {
-        context->completion_seq[src_id] = data_low.byte.BYTE0 & 0x00FFU;
-        context->completion_status[src_id] = data_low.byte.BYTE1 & 0x00FFU;
-        context->completion_pending_mask |= source_mask;
-        context->completion_count++;
-    }
-    else
-    {
-        /* 每个源节点保留一条未取走通知，避免广播回复互相覆盖。 */
-        context->completion_overrun_count++;
-    }
+    context->reply_status = data_low.byte.BYTE1 & 0x00FFU;
+    context->reply_received = 1U;
 
     return 1U;
 }
 
-/* 取出指定源节点的Seq和Status，并清除其待处理标志。 */
-Uint16 CanController_TakeCompletion(CanController_Context_t *context,
-                                    Uint16 sample_node_id,
-                                    Uint16 *seq,
-                                    Uint16 *status)
+/* 供APP轮询本次请求是否收到AVG_DONE。 */
+Uint16 CanController_GetReply(CanController_Context_t *context,
+                              Uint16 *reply_status)
 {
-    Uint16 source_mask;
-
-    if (sample_node_id >= CAN_CONTROLLER_BROADCAST_ID)
+    if (context->reply_received == 0U)
     {
-        return CAN_CONTROLLER_STATUS_INVALID_ID;
+        return 0U;
     }
 
-    source_mask = (Uint16)(1UL << sample_node_id);
-    if ((context->completion_pending_mask & source_mask) == 0U)
-    {
-        return CAN_CONTROLLER_STATUS_NO_MESSAGE;
-    }
-
-    *seq = context->completion_seq[sample_node_id];
-    *status = context->completion_status[sample_node_id];
-    context->completion_pending_mask &= (Uint16)(~source_mask);
-    return CAN_CONTROLLER_STATUS_SUCCESS;
+    *reply_status = context->reply_status;
+    return 1U;
 }
 
 /* 按Type、SrcID和DstID生成11-bit标准帧ID。 */
@@ -313,6 +260,8 @@ static Uint16 CanController_SendStart(CanController_Context_t *context,
 
     context->last_request_seq = request_seq;
     context->last_request_dst = dst_id;
+    context->reply_received = 0U;
+    context->reply_status = 0U;
     context->next_seq = (request_seq + 1U) & 0x00FFU;
 
     timeout_count = CAN_CONTROLLER_TX_TIMEOUT;
