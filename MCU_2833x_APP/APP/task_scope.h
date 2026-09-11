@@ -8,14 +8,11 @@
 /* 初始化线性波形缓存。 */
 void DSO_Init(void);
 
-/* 清空本次记录索引，并按指定分频开始存储。 */
-void DSO_CaptureStart(Uint32 div_factor);
+/* 清空本次记录索引，并按分频和目标点数开始存储。 */
+void DSO_CaptureStart(Uint32 div_factor, Uint32 capture_count);
 
 /* 在AD7982采样中断中输入一个实时采样值。 */
 void DSO_CaptureSample(float32 value);
-
-/* 结束本次波形记录，锁定已存储数据。 */
-void DSO_CaptureStop(void);
 
 /* 处理上位机的波形数据及采样信息查询。 */
 void DSO_CmdParse(Uint8 *rxbuf,

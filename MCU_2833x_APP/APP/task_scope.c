@@ -1,7 +1,7 @@
 #include <string.h>
 #include "task_scope.h"
 
-#define DSO_INPUT_SAMPLE_PERIOD_NS    (10000UL)
+#define DSO_INPUT_SAMPLE_PERIOD_NS (10000UL)
 
 typedef enum
 {
@@ -27,13 +27,14 @@ static volatile DSO_State_t dso_state;
 static volatile Uint32 dso_write_index;
 static volatile Uint32 dso_div_factor;
 static volatile Uint32 dso_div_count;
+static volatile Uint32 dso_capture_count;
 
-static void DSO_SendUint32(Uint8 socket,
-                           Uint8 *txbuf,
-                           Uint32 value,
-                           Uint16 (*fsendp)(Uint8,
-                                            const Uint8 *,
-                                            Uint16));
+static void DSO_SendUFloat32(Uint8 socket,
+                             Uint8 *txbuf,
+                             float32 value,
+                             Uint16 (*fsendp)(Uint8,
+                                              const Uint8 *,
+                                              Uint16));
 static void DSO_SendChunk(Uint8 socket,
                           Uint8 *txbuf,
                           Uint32 max_tx_byte,
@@ -56,10 +57,11 @@ void DSO_Init(void)
     dso_write_index = 0UL;
     dso_div_factor = 1UL;
     dso_div_count = 0UL;
+    dso_capture_count = 0UL;
 }
 
 /* 最新一次启动直接覆盖旧波形。 */
-void DSO_CaptureStart(Uint32 div_factor)
+void DSO_CaptureStart(Uint32 div_factor, Uint32 capture_count)
 {
     dso_write_index = 0UL;
     dso_div_count = 0UL;
@@ -68,10 +70,24 @@ void DSO_CaptureStart(Uint32 div_factor)
     {
         dso_div_factor = 1UL;
     }
-    dso_state = DSO_STATE_CAPTURING;
+
+    dso_capture_count = capture_count;
+    if (dso_capture_count > DSO_BUF_LEN)
+    {
+        dso_capture_count = DSO_BUF_LEN;
+    }
+
+    if (dso_capture_count == 0UL)
+    {
+        dso_state = DSO_STATE_FINISHED;
+    }
+    else
+    {
+        dso_state = DSO_STATE_CAPTURING;
+    }
 }
 
-/* 按固定整数分频保存采样值，缓存满后停止写入。 */
+/* 按固定整数分频保存采样值，达到目标点数后自动停止。 */
 void DSO_CaptureSample(float32 value)
 {
     if (dso_state != DSO_STATE_CAPTURING)
@@ -86,34 +102,28 @@ void DSO_CaptureSample(float32 value)
     }
     dso_div_count = 0UL;
 
-    if (dso_write_index < DSO_BUF_LEN)
-    {
-        dso_buffer[dso_write_index] = value;
-        dso_write_index++;
-    }
-}
-
-/* 平均采样结束时锁定本次有效波形。 */
-void DSO_CaptureStop(void)
-{
-    if (dso_state == DSO_STATE_CAPTURING)
+    dso_buffer[dso_write_index] = value;
+    dso_write_index++;
+    if (dso_write_index >= dso_capture_count)
     {
         dso_state = DSO_STATE_FINISHED;
     }
 }
 
 /* 以小端字节顺序发送一个Uint32。 */
-static void DSO_SendUint32(Uint8 socket,
-                           Uint8 *txbuf,
-                           Uint32 value,
-                           Uint16 (*fsendp)(Uint8,
-                                            const Uint8 *,
-                                            Uint16))
+static void DSO_SendUFloat32(Uint8 socket,
+                             Uint8 *txbuf,
+                             float32 value,
+                             Uint16 (*fsendp)(Uint8,
+                                              const Uint8 *,
+                                              Uint16))
 {
-    txbuf[0] = (Uint8)(value & 0xFFUL);
-    txbuf[1] = (Uint8)((value >> 8U) & 0xFFUL);
-    txbuf[2] = (Uint8)((value >> 16U) & 0xFFUL);
-    txbuf[3] = (Uint8)((value >> 24U) & 0xFFUL);
+    DSO_FloatBytes_t data;
+    data.f32 = value;
+    txbuf[0] = (Uint8)data.byte.LL;
+    txbuf[1] = (Uint8)data.byte.LH;
+    txbuf[2] = (Uint8)data.byte.HL;
+    txbuf[3] = (Uint8)data.byte.HH;
     (void)fsendp(socket, txbuf, 4U);
 }
 
@@ -198,13 +208,13 @@ void DSO_CmdParse(Uint8 *rxbuf,
     }
     else if (!memcmp("wave_getcount", rxbuf, 13U))
     {
-        DSO_SendUint32(socket, txbuf, dso_write_index, fsendp);
+        DSO_SendUFloat32(socket, txbuf, (float32)dso_write_index, fsendp);
     }
     else if (!memcmp("wave_getfreq_ns", rxbuf, 15U))
     {
-        DSO_SendUint32(socket,
-                       txbuf,
-                       DSO_INPUT_SAMPLE_PERIOD_NS * dso_div_factor,
-                       fsendp);
+        DSO_SendUFloat32(socket,
+                         txbuf,
+                         (float32)DSO_INPUT_SAMPLE_PERIOD_NS * dso_div_factor,
+                         fsendp);
     }
 }

@@ -35,10 +35,6 @@ interrupt void Interrupt_Ad7982DmaCh2Isr(void)
 {
     Ad7982_OnDmaComplete(&app_context.ad7982);
     DSO_CaptureSample((float32)app_context.ad7982.live_adc_value);
-    if (app_context.ad7982.calc_done != 0U)
-    {
-        DSO_CaptureStop();
-    }
     PieCtrlRegs.PIEACK.all = PIEACK_GROUP7;
 }
 
@@ -51,7 +47,7 @@ interrupt void INT6(void)
     // FpgaISRReadUpdate();
 
     // dsp 自带 adc 采样
-    GetAdc();
+    // GetAdc();
 
     // 写 fpga 寄存器
     // FpgaISRWriteUpdate();

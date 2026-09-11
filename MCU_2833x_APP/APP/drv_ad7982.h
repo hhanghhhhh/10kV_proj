@@ -21,7 +21,7 @@ typedef struct
     volatile float32 done_sum;      /* 最新完成窗口的累加快照 */
     volatile Uint32 done_count;     /* 最新完成窗口的计数快照 */
     volatile Uint16 calc_done;      /* 主循环待处理标志 */
-    volatile float32 final_average; /* 主循环计算的原始码平均值 */
+    volatile float32 final_average; /* 主循环换算后的平均电流 */
 } Ad7982_Context_t;
 
 void Ad7982_Init(Ad7982_Context_t *context);

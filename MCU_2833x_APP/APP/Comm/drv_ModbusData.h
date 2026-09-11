@@ -44,15 +44,16 @@ typedef struct
     Uint16 dataok;
 
     // 常规参数
-    float32 isamp_live;
-    float32 isamp_avg;
+    float32 isamp_live; /* 实时电流，单位A */
+    float32 isamp_avg;  /* 最近一次平均电流，单位A */
 
     /* 采样配置参数，暂按float32与上位机交互。 */
-    float32 i_range;
-    float32 tpl0501_value;
-    float32 ad5290_value;
+    float32 i_range; /* 目标电流，单位A，用于自动选择最小可用挡位 */
+    Uint16 dacomp_rc1; /* TPL0501目标电阻，单位kΩ */
+    Uint16 dacomp_x;   /* AD5290目标电阻，单位kΩ */
     float32 nplc;
     Uint16 sample_trigger;
+    Uint16 dacomp_out;
 
     Uint16 autorange;
 

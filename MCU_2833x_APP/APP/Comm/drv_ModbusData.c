@@ -23,9 +23,10 @@ void InitModbusData()
 
     p->program_type = IN_APP;
     p->i_range = 0.0F;
-    p->tpl0501_value = 0.0F;
-    p->ad5290_value = 0.0F;
+    p->dacomp_rc1 = 0U;
+    p->dacomp_x = 0U;
     p->nplc = 1.0F;
+    p->dacomp_out = 0U;
 }
 
 void md_vPrepareData(void)
@@ -117,13 +118,13 @@ void md_vPrepareData(void)
     // parameter
     md_rw1_buf[0x00] = F32_H(mgmd_stSCIRx.i_range);
     md_rw1_buf[0x01] = F32_L(mgmd_stSCIRx.i_range);
-    md_rw1_buf[0x02] = F32_H(mgmd_stSCIRx.tpl0501_value);
-    md_rw1_buf[0x03] = F32_L(mgmd_stSCIRx.tpl0501_value);
-    md_rw1_buf[0x04] = F32_H(mgmd_stSCIRx.ad5290_value);
-    md_rw1_buf[0x05] = F32_L(mgmd_stSCIRx.ad5290_value);
-    md_rw1_buf[0x06] = F32_H(mgmd_stSCIRx.nplc);
-    md_rw1_buf[0x07] = F32_L(mgmd_stSCIRx.nplc);
-    md_rw1_buf[0x08] = &mgmd_stSCIRx.sample_trigger;
+    md_rw1_buf[0x02] = &mgmd_stSCIRx.dacomp_rc1;
+    md_rw1_buf[0x03] = &mgmd_stSCIRx.dacomp_x;
+    md_rw1_buf[0x04] = F32_H(mgmd_stSCIRx.nplc);
+    md_rw1_buf[0x05] = F32_L(mgmd_stSCIRx.nplc);
+    md_rw1_buf[0x06] = &mgmd_stSCIRx.sample_trigger;
+    md_rw1_buf[0x07] = &mgmd_stSCIRx.dacomp_out;
+    md_rw1_buf[0x08] = &mgmd_stSCIRx.reserve;
     md_rw1_buf[0x09] = &mgmd_stSCIRx.reserve;
     md_rw1_buf[0x0A] = &mgmd_stSCIRx.reserve;
     md_rw1_buf[0x0B] = &mgmd_stSCIRx.reserve;

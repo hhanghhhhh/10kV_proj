@@ -63,7 +63,7 @@ void InitGpio(void)
     /*================== set IO_OUTPUT ====================================*/
     // W5500
     GpioCtrlRegs.GPADIR.bit.GPIO19 = 1; // CSn
-    GpioCtrlRegs.GPADIR.bit.GPIO24 = 1; // RST
+    GpioCtrlRegs.GPADIR.bit.GPIO14 = 1; // RST
     GpioCtrlRegs.GPADIR.bit.GPIO6 = 1;  // mode0
     GpioDataRegs.GPASET.bit.GPIO6 = 1;
     GpioCtrlRegs.GPADIR.bit.GPIO7 = 1; // mode1
