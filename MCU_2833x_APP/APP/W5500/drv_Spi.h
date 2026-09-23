@@ -3,7 +3,7 @@
 
 #include "config.h"
 
-#define  SOCKET_NUM_USE    3
+#define  SOCKET_NUM_USE    4
 #define W5500_RXTXBUF (1024)
 
 /* Private function prototypes -----------------------------------------------*/

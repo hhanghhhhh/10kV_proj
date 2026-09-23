@@ -22,7 +22,7 @@ void InitModbusData()
     memset(&mgmd_stSCIRx, 0, sizeof(mgmd_stSCIRx));
 
     p->program_type = IN_APP;
-    p->i_range = 0.0F;
+    p->i_range = 1.0E-3F;
     p->dacomp_rc1 = 0U;
     p->dacomp_x = 0U;
     p->nplc = 1.0F;
@@ -33,7 +33,7 @@ void md_vPrepareData(void)
 {
     // 0x1000
     // info
-    md_r1_buf[0x00] = &mgmd_stSCIRx.dataok;
+    md_r1_buf[0x00] = &mgmd_stSCIRx.reserve;
     md_r1_buf[0x01] = &mgmd_stSCIRx.reserve;
     md_r1_buf[0x02] = &mgmd_stSCIRx.reserve;
     md_r1_buf[0x03] = &mgmd_stSCIRx.reserve;

@@ -127,6 +127,7 @@ static void DSO_SendUFloat32(Uint8 socket,
     (void)fsendp(socket, txbuf, 4U);
 }
 
+float32 SamplingTask_ConvertAdcCode(float32 adc_code);
 /* 将连续float32数据按发送缓冲区容量分包发送。 */
 static void DSO_SendChunk(Uint8 socket,
                           Uint8 *txbuf,
@@ -162,7 +163,8 @@ static void DSO_SendChunk(Uint8 socket,
         tx_count = 0UL;
         for (i = 0UL; i < current_num; i++)
         {
-            data.f32 = start_addr[sent_num + i];
+            // 将 AD 值转化为真实值
+            data.f32 = SamplingTask_ConvertAdcCode(start_addr[sent_num + i]);
             txbuf[tx_count++] = (Uint8)data.byte.LL;
             txbuf[tx_count++] = (Uint8)data.byte.LH;
             txbuf[tx_count++] = (Uint8)data.byte.HL;

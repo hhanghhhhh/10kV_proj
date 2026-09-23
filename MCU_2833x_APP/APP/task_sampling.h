@@ -3,8 +3,8 @@
 
 #include "TypeDefine.h"
 
-#define SAMPLING_SOURCE_CAN       (0U)
-#define SAMPLING_SOURCE_MODBUS    (1U)
+#define SAMPLING_SOURCE_CAN (0U)
+#define SAMPLING_SOURCE_MODBUS (1U)
 
 /* 初始化采样业务状态和数字电位计控制通道。 */
 void SamplingTask_Init(void);
@@ -14,5 +14,7 @@ void SamplingTask_StartAverage(Uint16 source);
 
 /* 处理采样参数、数据发布及完成报文回复。 */
 void SamplingTask_Run(void);
+
+float32 SamplingTask_ConvertAdcCode(float32 adc_code);
 
 #endif

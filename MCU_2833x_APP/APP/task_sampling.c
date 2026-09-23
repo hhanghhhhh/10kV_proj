@@ -20,11 +20,11 @@
 #define SAMPLING_TASK_IGAIN_A1_MASK (0x00000020UL)   /* GPIO69 */
 #define SAMPLING_TASK_DACOMP_OUT_MASK (0x00000040UL) /* GPIO70 */
 #define SAMPLING_TASK_LC_HC_MASK (0x00000080UL)      /* GPIO71 */
-#define SAMPLING_TASK_RANGE_CONTROL_MASK \
+#define SAMPLING_TASK_RANGE_CONTROL_MASK                          \
     (SAMPLING_TASK_5MA_50MA_MASK | SAMPLING_TASK_100UA_1MA_MASK | \
-     SAMPLING_TASK_1UA_10UA_MASK | SAMPLING_TASK_IGAIN_A0_MASK | \
+     SAMPLING_TASK_1UA_10UA_MASK | SAMPLING_TASK_IGAIN_A0_MASK |  \
      SAMPLING_TASK_IGAIN_A1_MASK)
-#define SAMPLING_TASK_CURRENT_CONTROL_MASK \
+#define SAMPLING_TASK_CURRENT_CONTROL_MASK                          \
     (SAMPLING_TASK_RANGE_CONTROL_MASK | SAMPLING_TASK_TBD_MA_MASK | \
      SAMPLING_TASK_DACOMP_OUT_MASK | SAMPLING_TASK_LC_HC_MASK)
 
@@ -36,25 +36,17 @@ typedef struct
 } SamplingTask_CurrentRange_t;
 
 static const SamplingTask_CurrentRange_t sampling_task_current_range[] =
-{
-    {1.0E-8F, 3.3333F, SAMPLING_TASK_IGAIN_A0_MASK |
-                         SAMPLING_TASK_IGAIN_A1_MASK},
-    {1.0E-7F, 3.3333F, 0UL},
-    {1.0E-6F, 3.92F,   SAMPLING_TASK_1UA_10UA_MASK |
-                         SAMPLING_TASK_IGAIN_A0_MASK |
-                         SAMPLING_TASK_IGAIN_A1_MASK},
-    {1.0E-5F, 3.92F,   SAMPLING_TASK_1UA_10UA_MASK},
-    {1.0E-4F, 3.66F,   SAMPLING_TASK_100UA_1MA_MASK |
-                         SAMPLING_TASK_IGAIN_A0_MASK |
-                         SAMPLING_TASK_IGAIN_A1_MASK},
-    {1.0E-3F, 3.66F,   SAMPLING_TASK_100UA_1MA_MASK},
-    {5.0E-3F, 3.1125F, SAMPLING_TASK_5MA_50MA_MASK |
-                         SAMPLING_TASK_IGAIN_A0_MASK |
-                         SAMPLING_TASK_IGAIN_A1_MASK},
-    {5.0E-2F, 3.1125F, SAMPLING_TASK_5MA_50MA_MASK}
-};
+    {
+        {1.0E-8F, 3.3333F, SAMPLING_TASK_IGAIN_A0_MASK | SAMPLING_TASK_IGAIN_A1_MASK},
+        {1.0E-7F, 3.3333F, 0UL},
+        {1.0E-6F, 3.92F, SAMPLING_TASK_1UA_10UA_MASK | SAMPLING_TASK_IGAIN_A0_MASK | SAMPLING_TASK_IGAIN_A1_MASK},
+        {1.0E-5F, 3.92F, SAMPLING_TASK_1UA_10UA_MASK},
+        {1.0E-4F, 3.66F, SAMPLING_TASK_100UA_1MA_MASK | SAMPLING_TASK_IGAIN_A0_MASK | SAMPLING_TASK_IGAIN_A1_MASK},
+        {1.0E-3F, 3.66F, SAMPLING_TASK_100UA_1MA_MASK},
+        {5.0E-3F, 3.1125F, SAMPLING_TASK_5MA_50MA_MASK | SAMPLING_TASK_IGAIN_A0_MASK | SAMPLING_TASK_IGAIN_A1_MASK},
+        {5.0E-2F, 3.1125F, SAMPLING_TASK_5MA_50MA_MASK}};
 
-#define SAMPLING_TASK_CURRENT_RANGE_COUNT \
+#define SAMPLING_TASK_CURRENT_RANGE_COUNT           \
     ((Uint16)(sizeof(sampling_task_current_range) / \
               sizeof(sampling_task_current_range[0])))
 
@@ -73,7 +65,6 @@ static void SamplingTask_InitCurrentRangeGpio(void);
 static void SamplingTask_UpdateScopeConfig(Uint32 target_count);
 static void SamplingTask_ApplyCurrentRange(float32 i_range);
 static void SamplingTask_ApplyDacompOutput(Uint16 output_value);
-static float32 SamplingTask_ConvertAdcCode(float32 adc_code);
 static void SamplingTask_ProcessParameters(void);
 static void SamplingTask_ProcessTrigger(void);
 static void SamplingTask_ProcessResult(void);
@@ -127,7 +118,8 @@ static Uint16 SamplingTask_ConvertResistanceToCode(Uint16 resistance_kohm)
     Uint16 code;
 
     code = (Uint16)(resistance_kohm * SAMPLING_TASK_DIGIPOT_CODE_SCALE /
-                    SAMPLING_TASK_DIGIPOT_MAX_RESISTANCE_KOHM + 0.5F);
+                        SAMPLING_TASK_DIGIPOT_MAX_RESISTANCE_KOHM +
+                    0.5F);
     if (code > SAMPLING_TASK_DIGIPOT_MAX_CODE)
     {
         code = SAMPLING_TASK_DIGIPOT_MAX_CODE;
@@ -224,7 +216,7 @@ static void SamplingTask_ApplyDacompOutput(Uint16 output_value)
 }
 
 /* 现有18位有符号AD正满码131071对应4.096 V。 */
-static float32 SamplingTask_ConvertAdcCode(float32 adc_code)
+float32 SamplingTask_ConvertAdcCode(float32 adc_code)
 {
     return adc_code * current_per_adc_code;
 }
@@ -324,6 +316,8 @@ static void SamplingTask_ProcessResult(void)
     average_adc_code = app_context.ad7982.done_sum /
                        (float32)app_context.ad7982.done_count;
     average_current = SamplingTask_ConvertAdcCode(average_adc_code);
+
+    app_context.ad7982.adc_value_average = average_adc_code;
     app_context.ad7982.final_average = average_current;
     mgmd_stSCIRx.isamp_avg = average_current;
 

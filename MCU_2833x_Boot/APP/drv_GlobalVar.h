@@ -19,8 +19,8 @@
 #define NOW_TIMER_CNT (CpuTimer0Regs.TIM.all)
 /*=========================LIMIT VALUE===============================*/
 // W5500
-#define W5500_RESET_H (GpioDataRegs.GPBSET.bit.GPIO14 = 1)
-#define W5500_RESET_L (GpioDataRegs.GPBCLEAR.bit.GPIO14 = 1)
+#define W5500_RESET_H (GpioDataRegs.GPASET.bit.GPIO14 = 1)
+#define W5500_RESET_L (GpioDataRegs.GPACLEAR.bit.GPIO14 = 1)
 #define W5500_CSN_H (GpioDataRegs.GPASET.bit.GPIO19 = 1)
 #define W5500_CSN_L (GpioDataRegs.GPACLEAR.bit.GPIO19 = 1)
 
