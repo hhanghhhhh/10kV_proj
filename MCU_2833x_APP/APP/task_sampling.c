@@ -82,6 +82,7 @@ void SamplingTask_Init(void)
 /* 记录本次触发来源，最新请求直接重新开始计数。 */
 void SamplingTask_StartAverage(Uint16 source)
 {
+    mgmd_stSCIRx.data_ok = 0; // 清零 dataok 标志
     sampling_source = source;
     app_context.ad7982.calc_done = 0U;
     DSO_CaptureStart(scope_div_factor, scope_store_count);
@@ -250,7 +251,7 @@ static void SamplingTask_ProcessParameters(void)
     }
     nplc = SamplingTask_LimitParameter(mgmd_stSCIRx.nplc,
                                        0.01F,
-                                       1.0F);
+                                       10.0F);
     dacomp_out = (mgmd_stSCIRx.dacomp_out == 0U) ? 0U : 1U;
     mgmd_stSCIRx.dacomp_out = dacomp_out;
 
@@ -312,6 +313,7 @@ static void SamplingTask_ProcessResult(void)
         return;
     }
 
+    // 以下仅计算完成后执行一次
     app_context.ad7982.calc_done = 0U;
     average_adc_code = app_context.ad7982.done_sum /
                        (float32)app_context.ad7982.done_count;
@@ -320,7 +322,7 @@ static void SamplingTask_ProcessResult(void)
     app_context.ad7982.adc_value_average = average_adc_code;
     app_context.ad7982.final_average = average_current;
     mgmd_stSCIRx.isamp_avg = average_current;
-
+    mgmd_stSCIRx.data_ok = 1; // 置位 dataok 标志
     if (sampling_source == SAMPLING_SOURCE_CAN)
     {
         (void)CanSample_SendCompleted(&app_context.can_sample,
