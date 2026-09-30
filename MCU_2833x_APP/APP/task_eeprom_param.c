@@ -3,6 +3,7 @@
 #include "app_boot_eeprom.h"
 #include "drv_ModbusData.h"
 #include "drv_GlobalVar.h"
+#include "task_sampling.h"
 #include "DSP2833x_Examples.h"
 
 #define I2C_SUCCESS 0x0000
@@ -21,14 +22,10 @@ static void EepromConfig_SyncToRuntime(void)
     mgmd_stSCIRx.ip.addr3 = g_app_boot_eeprom_param.ip[2];
     mgmd_stSCIRx.ip.addr4 = g_app_boot_eeprom_param.ip[3];
 
-    mgmd_stSCIRx.cfg.vbr_th = user->config.vbr_th;
-    mgmd_stSCIRx.cfg.disable = user->config.prot_disable;
-    mgmd_stSCIRx.cfg.ovp_th = user->config.prot_ovp_th;
-    mgmd_stSCIRx.coef.enable.u16 = user->coef_enable;
-    for (i = 0; i < APP_EEPROM_COEF_NUM; i++)
+    for (i = 0; i < APP_EEPROM_CURRENT_RANGE_NUM; i++)
     {
-        // mgmd_stSCIRx.coef.f32v_adc_p_k[i].f32 = user->coef_k[i];
-        // mgmd_stSCIRx.coef.f32v_adc_p_b[i].f32 = user->coef_b[i];
+        mgmd_stSCIRx.coef.current_k[i] = user->current_calibration[i].k;
+        mgmd_stSCIRx.coef.current_b[i] = user->current_calibration[i].b;
     }
 }
 
@@ -37,29 +34,28 @@ static void EepromConfig_SyncFromRuntime(void)
     Uint16 i = 0;
     APP_EEPROM_USER_DATA *user = &g_app_eeprom_config.payload.user;
 
-    user->config.vbr_th = mgmd_stSCIRx.cfg.vbr_th;
-    user->config.prot_disable = mgmd_stSCIRx.cfg.disable;
-    user->config.prot_ovp_th = mgmd_stSCIRx.cfg.ovp_th;
-    user->coef_enable = mgmd_stSCIRx.coef.enable.u16;
-    for (i = 0; i < APP_EEPROM_COEF_NUM; i++)
+    for (i = 0; i < APP_EEPROM_CURRENT_RANGE_NUM; i++)
     {
-        // user->coef_k[i] = mgmd_stSCIRx.coef.f32v_adc_p_k[i].f32;
-        // user->coef_b[i] = mgmd_stSCIRx.coef.f32v_adc_p_b[i].f32;
+        user->current_calibration[i].k = mgmd_stSCIRx.coef.current_k[i];
+        user->current_calibration[i].b = mgmd_stSCIRx.coef.current_b[i];
     }
 }
 
 static Uint16 EepromConfig_CheckCoef(void)
 {
-    Uint16 i = 0;
-    APP_EEPROM_USER_DATA *user = &g_app_eeprom_config.payload.user;
+    // Uint16 i = 0;
+    // float32 k;
+    // float32 b;
 
-    for (i = 0; i < APP_EEPROM_COEF_NUM; i++)
-    {
-        if ((user->coef_k[i] < 0.9) || (user->coef_k[i] > 1.1))
-        {
-            return EEROM_DATAERR_OVERRANG;
-        }
-    }
+    // for (i = 0; i < APP_EEPROM_CURRENT_RANGE_NUM; i++)
+    // {
+    //     k = mgmd_stSCIRx.coef.current_k[i];
+    //     b = mgmd_stSCIRx.coef.current_b[i];
+    //     if (!((k >= 0.9F) && (k <= 1.1F)) || (b != b))
+    //     {
+    //         return EEROM_DATAERR_OVERRANG;
+    //     }
+    // }
     return 0;
 }
 
@@ -115,13 +111,17 @@ void EepromParam_Process(void)
     {
         mgmd_stSCIRx.coef_mode1 = 0;
         mgmd_stSCIRx.coef_mode2 = 0;
-        EepromConfig_SyncFromRuntime();
         if (EepromConfig_CheckCoef() != 0)
         {
             g_app_eeprom_status = EEROM_DATAERR_OVERRANG;
             return;
         }
-        EepromParam_SaveConfig();
+        EepromConfig_SyncFromRuntime();
+        rst = EepromParam_SaveConfig();
         EepromConfig_SyncToRuntime();
+        if (rst == I2C_SUCCESS)
+        {
+            SamplingTask_RefreshCurrentCalibration();
+        }
     }
 }

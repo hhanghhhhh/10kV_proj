@@ -15,6 +15,9 @@ void SamplingTask_StartAverage(Uint16 source);
 /* 处理采样参数、数据发布及完成报文回复。 */
 void SamplingTask_Run(void);
 
+/* EEPROM系数更新后，重新装载当前挡位的校准系数。 */
+void SamplingTask_RefreshCurrentCalibration(void);
+
 float32 SamplingTask_ConvertAdcCode(float32 adc_code);
 
 #endif

@@ -31,6 +31,8 @@ void InitModbusData()
 
 void md_vPrepareData(void)
 {
+    Uint16 i;
+
     // 0x1000
     // info
     md_r1_buf[0x00] = &mgmd_stSCIRx.data_ok;
@@ -96,7 +98,7 @@ void md_vPrepareData(void)
     md_w1_buf[0x03] = &mgmd_stSCIRx.ip.addr4;
     md_w1_buf[0x04] = &mgmd_stSCIRx.coef_mode1;
     md_w1_buf[0x05] = &mgmd_stSCIRx.coef_mode2;
-    md_w1_buf[0x06] = &mgmd_stSCIRx.coef.enable.u16;
+    md_w1_buf[0x06] = &mgmd_stSCIRx.reserve;
     md_w1_buf[0x07] = &mgmd_stSCIRx.reserve;
     md_w1_buf[0x08] = &mgmd_stSCIRx.reserve;
     md_w1_buf[0x09] = &mgmd_stSCIRx.reserve;
@@ -145,13 +147,19 @@ void md_vPrepareData(void)
 
     // 0x5000
     // calibration coefficient
-    // for (i = 0; i < APP_EEPROM_COEF_NUM; i++)
-    // {
-    //     md_rw2_buf[0x00 + 4 * i] = &mgmd_stSCIRx.coef.f32v_adc_p_k[i].u16.H;
-    //     md_rw2_buf[0x01 + 4 * i] = &mgmd_stSCIRx.coef.f32v_adc_p_k[i].u16.L;
-    //     md_rw2_buf[0x02 + 4 * i] = &mgmd_stSCIRx.coef.f32v_adc_p_b[i].u16.H;
-    //     md_rw2_buf[0x03 + 4 * i] = &mgmd_stSCIRx.coef.f32v_adc_p_b[i].u16.L;
-    // }
+    // 每挡4个寄存器：k高字、k低字、b高字、b低字。
+    // 挡位顺序：10nA、100nA、1uA、10uA、100uA、1mA、5mA、50mA。
+    for (i = 0; i < MD_RW2_SIZE; i++)
+    {
+        md_rw2_buf[i] = &mgmd_stSCIRx.reserve;
+    }
+    for (i = 0; i < APP_EEPROM_CURRENT_RANGE_NUM; i++)
+    {
+        md_rw2_buf[0x00 + 4 * i] = F32_H(mgmd_stSCIRx.coef.current_k[i]);
+        md_rw2_buf[0x01 + 4 * i] = F32_L(mgmd_stSCIRx.coef.current_k[i]);
+        md_rw2_buf[0x02 + 4 * i] = F32_H(mgmd_stSCIRx.coef.current_b[i]);
+        md_rw2_buf[0x03 + 4 * i] = F32_L(mgmd_stSCIRx.coef.current_b[i]);
+    }
 
     // 0x7000
     md_rw3_buf[0x00] = &mgmd_stSCIRx.program_type;

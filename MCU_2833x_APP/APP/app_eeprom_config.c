@@ -124,23 +124,10 @@ void AppEepromConfig_LoadDefault(void)
     APP_EEPROM_USER_DATA *user = &g_app_eeprom_config.payload.user;
 
     memset(&g_app_eeprom_config, 0, sizeof(APP_EEPROM_CONFIG));
-    user->config.vbr_th = 2;
-    user->config.prot_disable = 0;
-    user->config.prot_ovp_th = 200;
-    user->config.prot_fire_th = 100;
-    user->config.prot_fire_drop_ratio_100 = 50;
-    user->config.prot_fire_drop_value = 100;
-    user->config.prot_scp_th = 20;
-    user->config.prot_scp_time_ms = 200;
-    user->config.idss_overtime = 100;
-    user->config.vbr_overtime = 1000;
-    user->config.vbr_shorttime = 200;
-    user->config.enablerange2_500 = 1;
-
-    for (i = 0; i < APP_EEPROM_COEF_NUM; i++)
+    for (i = 0; i < APP_EEPROM_CURRENT_RANGE_NUM; i++)
     {
-        user->coef_k[i] = 1;
-        user->coef_b[i] = 0;
+        user->current_calibration[i].k = 1.0F;
+        user->current_calibration[i].b = 0.0F;
     }
     AppEepromConfig_Prepare(&g_app_eeprom_config);
 }

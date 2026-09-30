@@ -1,5 +1,6 @@
 #include "task_sampling.h"
 #include "app_context.h"
+#include "app_eeprom_config.h"
 #include "drv_digipot.h"
 #include "drv_ModbusData.h"
 #include "task_scope.h"
@@ -56,6 +57,9 @@ static Uint32 scope_store_count = 1UL;
 static float32 current_range_full_scale = 1.0E-8F;
 static float32 current_adc_full_scale_voltage = 3.3333F;
 static float32 current_per_adc_code = 0.0F; /* A/code */
+static float32 current_calibration_k = 1.0F;
+static float32 current_calibration_b = 0.0F;
+static Uint16 current_range_index = 0U;
 
 static float32 SamplingTask_LimitParameter(float32 value,
                                            float32 minimum,
@@ -68,6 +72,17 @@ static void SamplingTask_ApplyDacompOutput(Uint16 output_value);
 static void SamplingTask_ProcessParameters(void);
 static void SamplingTask_ProcessTrigger(void);
 static void SamplingTask_ProcessResult(void);
+
+/* 从已提交的EEPROM配置中装载当前挡位的校准系数。 */
+void SamplingTask_RefreshCurrentCalibration(void)
+{
+    current_calibration_k =
+        g_app_eeprom_config.payload.user
+            .current_calibration[current_range_index].k;
+    current_calibration_b =
+        g_app_eeprom_config.payload.user
+            .current_calibration[current_range_index].b;
+}
 
 /* 初始化已应用参数快照，并配置McBSP-B数字电位计通道。 */
 void SamplingTask_Init(void)
@@ -191,6 +206,7 @@ static void SamplingTask_ApplyCurrentRange(float32 i_range)
         range_index++;
     }
     range = &sampling_task_current_range[range_index];
+    current_range_index = range_index;
 
     GpioDataRegs.GPCCLEAR.all = SAMPLING_TASK_RANGE_CONTROL_MASK;
     GpioDataRegs.GPCSET.all = range->gpio_set_mask;
@@ -201,6 +217,7 @@ static void SamplingTask_ApplyCurrentRange(float32 i_range)
         (SAMPLING_TASK_ADC_REFERENCE_VOLTAGE * current_range_full_scale) /
         (SAMPLING_TASK_ADC_POSITIVE_FULL_CODE *
          current_adc_full_scale_voltage);
+    SamplingTask_RefreshCurrentCalibration();
 }
 
 /* DACOMP_OUT由上位机单独控制，不参与挡位切换。 */
@@ -219,7 +236,9 @@ static void SamplingTask_ApplyDacompOutput(Uint16 output_value)
 /* 现有18位有符号AD正满码131071对应4.096 V。 */
 float32 SamplingTask_ConvertAdcCode(float32 adc_code)
 {
-    return adc_code * current_per_adc_code;
+    float32 nominal_current = adc_code * current_per_adc_code;
+
+    return current_calibration_k * nominal_current + current_calibration_b;
 }
 
 /* 应用Modbus采样参数，电位计和挡位仅在参数变化时更新。 */

@@ -2,6 +2,7 @@
 #define _DRV_MODBUSDATA_H_
 
 #include "TypeDefine.h"
+#include "app_eeprom_config.h"
 /**************************************************************************************************
 CONSTANTS AND MACROS
 **************************************************************************************************/
@@ -51,14 +52,6 @@ typedef struct
     Uint16 sample_trigger;
     Uint16 dacomp_out;
 
-    // 功能配置参数
-    struct
-    {
-        Uint16 vbr_th;
-        Uint16 disable;
-        Uint16 ovp_th;
-    } cfg;
-
     // eeprom相关
     Uint16 coef_mode1;
     Uint16 coef_mode2;
@@ -74,20 +67,8 @@ typedef struct
     // 系数的首地址
     struct
     {
-        union
-        {
-            Uint16 u16;
-            struct
-            {
-                Uint16 vadc : 1;
-                Uint16 vdac : 1;
-                Uint16 iadc : 1;
-                Uint16 idac : 1;
-                Uint16 reserve : 12;
-            } bit;
-        } enable;
-        // MODBUS_DATA     f32v_adc_p_k[64];   //预留60个
-        // MODBUS_DATA     f32v_adc_p_b[64];
+        float32 current_k[APP_EEPROM_CURRENT_RANGE_NUM];
+        float32 current_b[APP_EEPROM_CURRENT_RANGE_NUM];
     } coef;
 
     Uint16 program_type;
