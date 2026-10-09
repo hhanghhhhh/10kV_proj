@@ -38,7 +38,7 @@ typedef struct
 
 static const SamplingTask_CurrentRange_t sampling_task_current_range[] =
     {
-        {1.0E-8F, 3.3333F, SAMPLING_TASK_IGAIN_A0_MASK | SAMPLING_TASK_IGAIN_A1_MASK},
+        {1.0E-8F, 1.6667F, SAMPLING_TASK_IGAIN_A1_MASK},
         {1.0E-7F, 3.3333F, 0UL},
         {1.0E-6F, 3.92F, SAMPLING_TASK_1UA_10UA_MASK | SAMPLING_TASK_IGAIN_A0_MASK | SAMPLING_TASK_IGAIN_A1_MASK},
         {1.0E-5F, 3.92F, SAMPLING_TASK_1UA_10UA_MASK},
