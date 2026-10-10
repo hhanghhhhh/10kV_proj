@@ -124,7 +124,7 @@ void AppEepromConfig_LoadDefault(void)
     APP_EEPROM_USER_DATA *user = &g_app_eeprom_config.payload.user;
 
     memset(&g_app_eeprom_config, 0, sizeof(APP_EEPROM_CONFIG));
-    for (i = 0; i < APP_EEPROM_CURRENT_RANGE_NUM; i++)
+    for (i = 0; i < APP_EEPROM_CURRENT_CALIBRATION_NUM; i++)
     {
         user->current_calibration[i].k = 1.0F;
         user->current_calibration[i].b = 0.0F;

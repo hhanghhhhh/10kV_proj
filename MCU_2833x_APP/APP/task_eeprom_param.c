@@ -22,7 +22,7 @@ static void EepromConfig_SyncToRuntime(void)
     mgmd_stSCIRx.ip.addr3 = g_app_boot_eeprom_param.ip[2];
     mgmd_stSCIRx.ip.addr4 = g_app_boot_eeprom_param.ip[3];
 
-    for (i = 0; i < APP_EEPROM_CURRENT_RANGE_NUM; i++)
+    for (i = 0; i < APP_EEPROM_CURRENT_CALIBRATION_NUM; i++)
     {
         mgmd_stSCIRx.coef.current_k[i] = user->current_calibration[i].k;
         mgmd_stSCIRx.coef.current_b[i] = user->current_calibration[i].b;
@@ -34,7 +34,7 @@ static void EepromConfig_SyncFromRuntime(void)
     Uint16 i = 0;
     APP_EEPROM_USER_DATA *user = &g_app_eeprom_config.payload.user;
 
-    for (i = 0; i < APP_EEPROM_CURRENT_RANGE_NUM; i++)
+    for (i = 0; i < APP_EEPROM_CURRENT_CALIBRATION_NUM; i++)
     {
         user->current_calibration[i].k = mgmd_stSCIRx.coef.current_k[i];
         user->current_calibration[i].b = mgmd_stSCIRx.coef.current_b[i];
@@ -47,7 +47,7 @@ static Uint16 EepromConfig_CheckCoef(void)
     // float32 k;
     // float32 b;
 
-    // for (i = 0; i < APP_EEPROM_CURRENT_RANGE_NUM; i++)
+    // for (i = 0; i < APP_EEPROM_CURRENT_CALIBRATION_NUM; i++)
     // {
     //     k = mgmd_stSCIRx.coef.current_k[i];
     //     b = mgmd_stSCIRx.coef.current_b[i];

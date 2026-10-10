@@ -67,8 +67,9 @@ typedef struct
     // 系数的首地址
     struct
     {
-        float32 current_k[APP_EEPROM_CURRENT_RANGE_NUM];
-        float32 current_b[APP_EEPROM_CURRENT_RANGE_NUM];
+        /* 前8组正电流、后8组负电流，均按10nA至50mA排列。 */
+        float32 current_k[APP_EEPROM_CURRENT_CALIBRATION_NUM];
+        float32 current_b[APP_EEPROM_CURRENT_CALIBRATION_NUM];
     } coef;
 
     Uint16 program_type;

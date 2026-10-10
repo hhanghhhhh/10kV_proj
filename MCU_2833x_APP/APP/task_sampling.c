@@ -60,6 +60,7 @@ static float32 current_per_adc_code = 0.0F; /* A/code */
 static float32 current_calibration_k = 1.0F;
 static float32 current_calibration_b = 0.0F;
 static Uint16 current_range_index = 0U;
+static Uint16 current_calibration_index = 0U;
 
 static float32 SamplingTask_LimitParameter(float32 value,
                                            float32 minimum,
@@ -73,15 +74,15 @@ static void SamplingTask_ProcessParameters(void);
 static void SamplingTask_ProcessTrigger(void);
 static void SamplingTask_ProcessResult(void);
 
-/* 从已提交的EEPROM配置中装载当前挡位的校准系数。 */
+/* 按当前挡位及i_range符号装载已提交的校准系数。 */
 void SamplingTask_RefreshCurrentCalibration(void)
 {
     current_calibration_k =
         g_app_eeprom_config.payload.user
-            .current_calibration[current_range_index].k;
+            .current_calibration[current_calibration_index].k;
     current_calibration_b =
         g_app_eeprom_config.payload.user
-            .current_calibration[current_range_index].b;
+            .current_calibration[current_calibration_index].b;
 }
 
 /* 初始化已应用参数快照，并配置McBSP-B数字电位计通道。 */
@@ -207,6 +208,11 @@ static void SamplingTask_ApplyCurrentRange(float32 i_range)
     }
     range = &sampling_task_current_range[range_index];
     current_range_index = range_index;
+    current_calibration_index = current_range_index;
+    if (i_range < 0.0F)
+    {
+        current_calibration_index += APP_EEPROM_CURRENT_RANGE_NUM;
+    }
 
     GpioDataRegs.GPCCLEAR.all = SAMPLING_TASK_RANGE_CONTROL_MASK;
     GpioDataRegs.GPCSET.all = range->gpio_set_mask;

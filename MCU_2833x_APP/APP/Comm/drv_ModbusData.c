@@ -148,12 +148,13 @@ void md_vPrepareData(void)
     // 0x5000
     // calibration coefficient
     // 每挡4个寄存器：k高字、k低字、b高字、b低字。
-    // 挡位顺序：10nA、100nA、1uA、10uA、100uA、1mA、5mA、50mA。
+    // 正电流0x5000~0x501F，负电流0x5020~0x503F。
+    // 两组均按10nA、100nA、1uA、10uA、100uA、1mA、5mA、50mA排列。
     for (i = 0; i < MD_RW2_SIZE; i++)
     {
         md_rw2_buf[i] = &mgmd_stSCIRx.reserve;
     }
-    for (i = 0; i < APP_EEPROM_CURRENT_RANGE_NUM; i++)
+    for (i = 0; i < APP_EEPROM_CURRENT_CALIBRATION_NUM; i++)
     {
         md_rw2_buf[0x00 + 4 * i] = F32_H(mgmd_stSCIRx.coef.current_k[i]);
         md_rw2_buf[0x01 + 4 * i] = F32_L(mgmd_stSCIRx.coef.current_k[i]);
