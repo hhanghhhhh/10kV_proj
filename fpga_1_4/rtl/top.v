@@ -51,9 +51,11 @@ module TOP
     // signal
     output                      vma0                    ,
     output                      vma1                    ,
+    output                      vma2                    ,
     output                      vma_en                  ,
     output                      va0                     ,
     output                      va1                     ,
+    output                      va2                     ,
     output                      va_en                   ,
     output                      idac_amps               ,
     output                      imeas_gain10            ,
@@ -71,13 +73,13 @@ module TOP
     output                      lo_protect              ,
     output                      outoff                  ,
     output                      pramp_p                 ,
-    output [4:0]                reserved                ,
+    output [4:2]                reserved                ,
     output                      realy_vo                ,
     input                       in_over_temp            
 );
 
 //*************** Parameter & Internal Register ****//
-localparam  FPGA_VERSION      = 1;
+localparam  FPGA_VERSION      = 2;
 localparam  RUN_FLAG          = 10;
 localparam  COM_FPGA_SLOW_DATA_NUM      = 10;
 localparam  COM_FPGA_SLOW_TXCLK_DIV_CNT = 4;
@@ -118,6 +120,7 @@ wire [23:0]                     adc_datab_cur_send;
 wire                            adc_cnv_flag_send;
 
 wire [31:0]                     slowrx_cmd;     //synthesis keep
+wire [31:0]                     slowrx_cmd2;    //synthesis keep
 wire [31:0]                     slowrx_dacset;      //synthesis keep
 wire [31:0]                     slowrx_samppara;    //synthesis keep
 wire [31:0]                     slowtx_state;
@@ -175,6 +178,8 @@ assign      idac_amps           = slowrx_cmd[4];
 assign      idac_slowen         = slowrx_cmd[5];
 assign      idac_slow_a0        = slowrx_cmd[6];
 assign      idac_slow_a1        = slowrx_cmd[7];
+assign      vma2                = slowrx_cmd2[0];
+assign      va2                 = slowrx_cmd2[1];
 assign      vma0                = slowrx_cmd[8];
 assign      vma1                = slowrx_cmd[9];
 assign      vma_en              = slowrx_cmd[10];
@@ -230,7 +235,7 @@ com_between_fpga_slow_rx #(
     .rx_data1            (slowrx_cmd        ),
     .rx_data2            (slowrx_dacset     ),
     .rx_data3            (slowrx_samppara   ),
-    .rx_data4            (                  ),
+    .rx_data4            (slowrx_cmd2       ),
     .rx_data5            (                  ),
     .rx_data6            (                  ),
     .rx_data7            (                  ),

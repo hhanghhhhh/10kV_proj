@@ -3,7 +3,7 @@
 <!--                                                         -->
 <!-- Copyright 1986-2018 Xilinx, Inc. All Rights Reserved.   -->
 
-<Project Version="7" Minor="39" Path="D:/05-work/000_gitee/hvsmu_1_4/zynq_hvsmu1_4/hvsmu.xpr">
+<Project Version="7" Minor="39" Path="D:/05-work/30_10kv/00_git/10kV_proj/zynq_hvsmu1_4/hvsmu.xpr">
   <DefaultLaunch Dir="$PRUNDIR"/>
   <Configuration>
     <Option Name="Id" Val="f8c687912000495cb004d5d0988f4b67"/>
@@ -66,14 +66,14 @@
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_AXI_Lite_to_register_0_0/system_AXI_Lite_to_register_0_0.xci">
-          <Proxy FileSetName="system_AXI_Lite_to_register_0_0"/>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_processing_system7_0_0/system_processing_system7_0_0.xci">
+          <Proxy FileSetName="system_processing_system7_0_0"/>
         </CompFileExtendedInfo>
         <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_rst_ps7_0_50M_0/system_rst_ps7_0_50M_0.xci">
           <Proxy FileSetName="system_rst_ps7_0_50M_0"/>
         </CompFileExtendedInfo>
-        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_processing_system7_0_0/system_processing_system7_0_0.xci">
-          <Proxy FileSetName="system_processing_system7_0_0"/>
+        <CompFileExtendedInfo CompFileName="system.bd" FileRelPathName="ip/system_AXI_Lite_to_register_0_0/system_AXI_Lite_to_register_0_0.xci">
+          <Proxy FileSetName="system_AXI_Lite_to_register_0_0"/>
         </CompFileExtendedInfo>
       </File>
       <File Path="$PPRDIR/src/data_reg/DFF_R.v">

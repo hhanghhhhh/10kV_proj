@@ -84,6 +84,7 @@ wire                            slow_rx_clk;
 wire                            slow_rx_data;
 
 wire [31:0]                     slowtx_cmd;
+wire [31:0]                     slowtx_cmd2;
 wire [31:0]                     slowtx_dacset;
 wire [31:0]                     slowtx_samppara;
 wire [31:0]                     slowrx_state;
@@ -375,6 +376,7 @@ register #(
 
     // ps to pl
     .set_cmd                  (slowtx_cmd              ),
+    .set_cmd2                 (slowtx_cmd2             ),
     .set_dac                  (slowtx_dacset           ),
     .set_samppara             (slowtx_samppara         ),
     .ps_cmd                   (ps_to_pl_cmd            ),
@@ -422,7 +424,7 @@ com_between_fpga_slow_tx #(
     .send_data1          (slowtx_cmd        ),
     .send_data2          (slowtx_dacset     ),
     .send_data3          (slowtx_samppara   ),
-    .send_data4          (4                 ),
+    .send_data4          (slowtx_cmd2       ),
     .send_data5          (5                 ),
     .send_data6          (6                 ),
     .send_data7          (7                 ),

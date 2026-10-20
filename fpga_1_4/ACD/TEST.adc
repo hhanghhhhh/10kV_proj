@@ -61,8 +61,8 @@ set_pin_assignment	{ range_10nA_100nA }	{ LOCATION = U18; DRIVESTRENGTH = 16; }
 set_pin_assignment	{ range_1uA_10uA }	{ LOCATION = U16; DRIVESTRENGTH = 16; }
 set_pin_assignment	{ range_5mA_50mA }	{ LOCATION = T11; DRIVESTRENGTH = 16; }
 set_pin_assignment	{ realy_vo }	{ LOCATION = T10; }
-set_pin_assignment	{ reserved[0] }	{ LOCATION = U14; }
-set_pin_assignment	{ reserved[1] }	{ LOCATION = V14; }
+set_pin_assignment	{ va2 }	{ LOCATION = U14; }
+set_pin_assignment	{ vma2 }	{ LOCATION = V14; }
 set_pin_assignment	{ reserved[2] }	{ LOCATION = T13; }
 set_pin_assignment	{ reserved[3] }	{ LOCATION = U13; }
 set_pin_assignment	{ reserved[4] }	{ LOCATION = T9; }

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Project Version="3" Minor="2" Path="D:/05-work/000_gitee/hvsmu_1_4/fpga_1_4">
+<Project Version="3" Minor="2" Path="D:/05-work/30_10kv/00_git/10kV_proj/fpga_1_4">
     <Project_Created_Time></Project_Created_Time>
     <TD_Encoding>UTF-8</TD_Encoding>
     <TD_Version>5.6.56362</TD_Version>
