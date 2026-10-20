@@ -1,0 +1,166 @@
+set_pin_assignment	{ adc_busy }	{ LOCATION = U1; IOSTANDARD = LVCMOS18; }
+set_pin_assignment	{ adc_cnv }	{ LOCATION = L4; IOSTANDARD = LVCMOS18; }
+set_pin_assignment	{ adc_csn }	{ LOCATION = M2; IOSTANDARD = LVCMOS18; }
+set_pin_assignment	{ adc_rstn }	{ LOCATION = K5; IOSTANDARD = LVCMOS18; }
+set_pin_assignment	{ adc_sck }	{ LOCATION = L6; IOSTANDARD = LVCMOS18; }
+set_pin_assignment	{ adc_sdi }	{ LOCATION = L5; IOSTANDARD = LVCMOS18; }
+set_pin_assignment	{ adc_sdo0 }	{ LOCATION = K6; IOSTANDARD = LVCMOS18; }
+set_pin_assignment	{ adc_sdo1 }	{ LOCATION = L1; IOSTANDARD = LVCMOS18; }
+set_pin_assignment	{ adc_sdo2 }	{ LOCATION = M1; IOSTANDARD = LVCMOS18; }
+set_pin_assignment	{ adc_sdo3 }	{ LOCATION = K3; IOSTANDARD = LVCMOS18; }
+set_pin_assignment	{ adc_sdo4 }	{ LOCATION = L3; IOSTANDARD = LVCMOS18; }
+set_pin_assignment	{ adc_sdo5 }	{ LOCATION = N2; IOSTANDARD = LVCMOS18; }
+set_pin_assignment	{ adc_sdo6 }	{ LOCATION = N1; IOSTANDARD = LVCMOS18; }
+set_pin_assignment	{ adc_sdo7 }	{ LOCATION = M3; IOSTANDARD = LVCMOS18; }
+set_pin_assignment	{ clk_external }	{ LOCATION = D15; }
+set_pin_assignment	{ cmode_bw1_n }	{ LOCATION = V15; }
+set_pin_assignment	{ cmode_bw2_n }	{ LOCATION = V16; }
+set_pin_assignment	{ cmode_n }	{ LOCATION = T16; }
+set_pin_assignment	{ cmult23_n }	{ LOCATION = R16; }
+set_pin_assignment	{ com_in[0] }	{ LOCATION = B7; }
+set_pin_assignment	{ com_in[10] }	{ LOCATION = C4; }
+set_pin_assignment	{ com_in[11] }	{ LOCATION = B4; }
+set_pin_assignment	{ com_in[1] }	{ LOCATION = B6; }
+set_pin_assignment	{ com_in[2] }	{ LOCATION = A6; }
+set_pin_assignment	{ com_in[3] }	{ LOCATION = A5; }
+set_pin_assignment	{ com_in[4] }	{ LOCATION = D8; }
+set_pin_assignment	{ com_in[5] }	{ LOCATION = C7; }
+set_pin_assignment	{ com_in[6] }	{ LOCATION = E6; }
+set_pin_assignment	{ com_in[7] }	{ LOCATION = E5; }
+set_pin_assignment	{ com_in[8] }	{ LOCATION = E7; }
+set_pin_assignment	{ com_in[9] }	{ LOCATION = D7; }
+set_pin_assignment	{ com_out[0] }	{ LOCATION = B1; }
+set_pin_assignment	{ com_out[10] }	{ LOCATION = E2; }
+set_pin_assignment	{ com_out[11] }	{ LOCATION = D2; }
+set_pin_assignment	{ com_out[1] }	{ LOCATION = A1; }
+set_pin_assignment	{ com_out[2] }	{ LOCATION = B3; }
+set_pin_assignment	{ com_out[3] }	{ LOCATION = B2; }
+set_pin_assignment	{ com_out[4] }	{ LOCATION = D5; }
+set_pin_assignment	{ com_out[5] }	{ LOCATION = D4; }
+set_pin_assignment	{ com_out[6] }	{ LOCATION = E3; }
+set_pin_assignment	{ com_out[7] }	{ LOCATION = D3; }
+set_pin_assignment	{ com_out[8] }	{ LOCATION = F4; }
+set_pin_assignment	{ com_out[9] }	{ LOCATION = F3; }
+set_pin_assignment	{ idac1_cs }	{ LOCATION = B11; }
+set_pin_assignment	{ idac1_sclk }	{ LOCATION = A11; }
+set_pin_assignment	{ idac1_sdi }	{ LOCATION = F13; }
+set_pin_assignment	{ idac_amps }	{ LOCATION = D13; }
+set_pin_assignment	{ idac_slow_a0 }	{ LOCATION = B17; }
+set_pin_assignment	{ idac_slow_a1 }	{ LOCATION = A15; }
+set_pin_assignment	{ idac_slowen }	{ LOCATION = B16; }
+set_pin_assignment	{ ifb_gain1 }	{ LOCATION = N16; }
+set_pin_assignment	{ ifb_gain3 }	{ LOCATION = P17; }
+set_pin_assignment	{ imeas_gain1 }	{ LOCATION = M16; }
+set_pin_assignment	{ imeas_gain10 }	{ LOCATION = M17; }
+set_pin_assignment	{ in_over_temp }	{ LOCATION = R10; }
+set_pin_assignment	{ lo_protect }	{ LOCATION = U12; }
+set_pin_assignment	{ outoff }	{ LOCATION = V12; }
+set_pin_assignment	{ pramp_p }	{ LOCATION = V10; }
+set_pin_assignment	{ range_100uA_1mA }	{ LOCATION = V17; DRIVESTRENGTH = 16; }
+set_pin_assignment	{ range_10nA_100nA }	{ LOCATION = U18; DRIVESTRENGTH = 16; }
+set_pin_assignment	{ range_1uA_10uA }	{ LOCATION = U16; DRIVESTRENGTH = 16; }
+set_pin_assignment	{ range_5mA_50mA }	{ LOCATION = T11; DRIVESTRENGTH = 16; }
+set_pin_assignment	{ realy_vo }	{ LOCATION = T10; }
+set_pin_assignment	{ reserved[0] }	{ LOCATION = U14; }
+set_pin_assignment	{ reserved[1] }	{ LOCATION = V14; }
+set_pin_assignment	{ reserved[2] }	{ LOCATION = T13; }
+set_pin_assignment	{ reserved[3] }	{ LOCATION = U13; }
+set_pin_assignment	{ reserved[4] }	{ LOCATION = T9; }
+set_pin_assignment	{ va0 }	{ LOCATION = P15; }
+set_pin_assignment	{ va1 }	{ LOCATION = R15; }
+set_pin_assignment	{ va_en }	{ LOCATION = T14; }
+set_pin_assignment	{ vdac2_cs }	{ LOCATION = B13; }
+set_pin_assignment	{ vdac2_sclk }	{ LOCATION = B14; }
+set_pin_assignment	{ vdac2_sdi }	{ LOCATION = C12; }
+set_pin_assignment	{ vdac_slow_a0 }	{ LOCATION = A14; }
+set_pin_assignment	{ vdac_slow_a1 }	{ LOCATION = A13; }
+set_pin_assignment	{ vdac_slowen }	{ LOCATION = B18; }
+set_pin_assignment	{ vma0 }	{ LOCATION = P14; }
+set_pin_assignment	{ vma1 }	{ LOCATION = N17; }
+set_pin_assignment	{ vma_en }	{ LOCATION = P18; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
