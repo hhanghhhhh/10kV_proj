@@ -62,6 +62,7 @@ static Uint16 WriteSingleRegister(Uint16 addr, Uint16 value, Uint16* buffer[], U
     {
         addr_offset = addr - startaddr;
         *buffer[addr_offset] = value;
+        md_WriteCallBack(addr, value);
         rst = 1;
     }
 
@@ -87,6 +88,7 @@ static Uint16 WriteMultipleRegisters(Uint16 addr, Uint16 regnum, Uint16* pRxdata
             value_L = pRxdata[MD_DATA_OFFSET + i * 2 + 1];
             value = (value_H << 8) | value_L;
             *buffer[addr_offset + i] = value;
+            md_WriteCallBack(addr + i, value);
         }
         rst = 1;
     }

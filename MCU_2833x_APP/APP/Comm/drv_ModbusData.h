@@ -88,6 +88,9 @@ extern Uint16 *md_w1_buf[];
 
 extern void md_vPrepareData(void);
 
+/* 每个寄存器成功写入后调用，addr为绝对Modbus地址。 */
+void md_WriteCallBack(Uint16 addr, Uint16 data);
+
 #endif
 
 /**************************************************************************************************

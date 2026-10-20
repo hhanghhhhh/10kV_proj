@@ -167,6 +167,16 @@ void md_vPrepareData(void)
     md_rw3_buf[0x01] = &mgmd_stSCIRx.jump_cmd;
 }
 
+/* 写入i_range的任一字时立即撤销上次采样完成标志，包括重复写相同值。 */
+void md_WriteCallBack(Uint16 addr, Uint16 data)
+{
+    (void)data;
+    if ((addr == 0x3000U) || (addr == 0x3001U))
+    {
+        mgmd_stSCIRx.data_ok = 0U;
+    }
+}
+
 /**************************************************************************************************
  END OF FILE (EOF)
 **************************************************************************************************/
