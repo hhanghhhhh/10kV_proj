@@ -25,6 +25,7 @@ void InitModbusData(void)
     p->delay_ref = 2;
     p->delay_discharge = 2000;
     p->auto_discharge_delay = 2;
+    p->mode0_init_range.f32 = 50e-3;
     p->sw_delay_ms = 10;
     p->relay_on_always = 0;
     p->auto_discharge = 1;
@@ -146,9 +147,8 @@ void ModbusDataRegister(void)
     md_w1_buf[0x1B] = &mgmd_stSCIRx.relay_on_always;
     md_w1_buf[0x1C] = &mgmd_stSCIRx.auto_discharge;
     md_w1_buf[0x1D] = &mgmd_stSCIRx.auto_discharge_delay;
-    //...
-    md_w1_buf[0x1E] = &mgmd_stSCIRx.reserve;
-    md_w1_buf[0x1F] = &mgmd_stSCIRx.reserve;
+    md_w1_buf[0x1E] = &mgmd_stSCIRx.mode0_init_range.u16.H;
+    md_w1_buf[0x1F] = &mgmd_stSCIRx.mode0_init_range.u16.L;
     //...
     md_w1_buf[0x27] = &mgmd_stSCIRx.wave.enable;
     md_w1_buf[0x28] = &mgmd_stSCIRx.wave.trigger;

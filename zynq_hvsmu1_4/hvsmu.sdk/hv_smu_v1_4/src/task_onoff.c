@@ -377,14 +377,14 @@ void PowerOnNormal(void)
         pPC->power_ctrl = POWER_IDEL;
 
         // 禁止输出，dataok 20 以上表示禁止输出的原因
-        if (output_disable.u16 != 0)
-        {
-            pPC->dataok = 20 + output_disable.u16;
-            pPC->isamp_avg.f32 = 0;
-            pPC->vsamp_avg.f32 = 0;
-            state = PWON_IDEL;
-            return;
-        }
+        // if (output_disable.u16 != 0)
+        // {
+        //     pPC->dataok = 20 + output_disable.u16;
+        //     pPC->isamp_avg.f32 = 0;
+        //     pPC->vsamp_avg.f32 = 0;
+        //     state = PWON_IDEL;
+        //     return;
+        // }
 
         pwon_flag = 1;
         // 允许输出
@@ -403,7 +403,7 @@ void PowerOnNormal(void)
         {
             VoRelayOn();
             // delay 并状态跳转
-            FSM_DELAY_NEXT(st_delay, 3, PWON_VOL_RANGESW);
+            FSM_DELAY_NEXT(st_delay, 7, PWON_VOL_RANGESW);
         }
     }
 
@@ -419,7 +419,7 @@ void PowerOnNormal(void)
     case PWON_VOL_RANGESW:
         // 切换到上位机设置电压档位
         RangeVolSel(pRange_vol->range_index_PC);
-        RangeCurSel(RANGE_CUR_50mA_INDEX);
+        RangeCurSel(GetCurRangeIndex(pPC->mode0_init_range.f32));
         state = PWON_SET_REF;
         break;
 
@@ -429,12 +429,12 @@ void PowerOnNormal(void)
         // 设置电压值
         SetVolRef(pPC->v_set.f32);
         // 电流ref设置为50mA
-        SetCurRef(50e-3);
+        SetCurRef(pPC->mode0_init_range.f32);
         // 波形记录
         if (pPC->wave.enable == 1 && pPC->plusewidth.f32 > 0)
         {
             StartWaveRecord(pPC->plusewidth.f32 * 1000 + 20);
-            WaveRangeSaveCur(RANGE_CUR_50mA_INDEX);
+            WaveRangeSaveCur(GetCurRangeIndex(pPC->mode0_init_range.f32));
             WaveRangeSaveVol(pRange_vol->range_index_PC);
         }
         // 计算延时时间
@@ -545,14 +545,14 @@ void PowerOnCan(void)
         can_enabled = (pPC->plusewidth.f32 > 0.0F) ? 1U : 0U;
 
         // 禁止输出，dataok 20 以上表示禁止输出的原因
-        if (output_disable.u16 != 0)
-        {
-            pPC->dataok = 20 + output_disable.u16;
-            pPC->isamp_avg.f32 = 0;
-            pPC->vsamp_avg.f32 = 0;
-            state = PWON_IDEL;
-            return;
-        }
+        // if (output_disable.u16 != 0)
+        // {
+        //     pPC->dataok = 20 + output_disable.u16;
+        //     pPC->isamp_avg.f32 = 0;
+        //     pPC->vsamp_avg.f32 = 0;
+        //     state = PWON_IDEL;
+        //     return;
+        // }
 
         pwon_flag = 1;
         // 允许输出
@@ -571,7 +571,7 @@ void PowerOnCan(void)
         {
             VoRelayOn();
             // delay 并状态跳转
-            FSM_DELAY_NEXT(st_delay, 3, PWON_VOL_RANGESW);
+            FSM_DELAY_NEXT(st_delay, 7, PWON_VOL_RANGESW);
         }
     }
 
@@ -777,7 +777,7 @@ void PowerOnUph_nometer(void)
         {
             VoRelayOn();
             // delay 并状态跳转
-            FSM_DELAY_NEXT(st_delay, 3, PWON_VOL_RANGESW);
+            FSM_DELAY_NEXT(st_delay, 7, PWON_VOL_RANGESW);
         }
     }
 
@@ -962,7 +962,7 @@ void PowerOnUph(void)
         {
             VoRelayOn();
             // delay 并状态跳转
-            FSM_DELAY_NEXT(st_delay, 3, PWON_VOL_RANGESW);
+            FSM_DELAY_NEXT(st_delay, 7, PWON_VOL_RANGESW);
         }
     }
 
@@ -1188,14 +1188,14 @@ void PowerOnVbr(void)
     {
         pPC->power_ctrl = POWER_IDEL;
         // 禁止输出，dataok 20 以上表示禁止输出的原因
-        if (output_disable.u16 != 0)
-        {
-            pPC->dataok = 20 + output_disable.u16;
-            pPC->isamp_avg.f32 = 0;
-            pPC->vsamp_avg.f32 = 0;
-            state = PWON_IDEL;
-            return;
-        }
+        // if (output_disable.u16 != 0)
+        // {
+        //     pPC->dataok = 20 + output_disable.u16;
+        //     pPC->isamp_avg.f32 = 0;
+        //     pPC->vsamp_avg.f32 = 0;
+        //     state = PWON_IDEL;
+        //     return;
+        // }
 
         pwon_flag = 1;
         // 允许输出
@@ -1220,7 +1220,7 @@ void PowerOnVbr(void)
         {
             VoRelayOn();
             // delay 并状态跳转
-            FSM_DELAY_NEXT(st_delay, 3, PWONVBR_RANGESW);
+            FSM_DELAY_NEXT(st_delay, 7, PWONVBR_RANGESW);
         }
     }
 
@@ -1381,7 +1381,7 @@ void PowerOnCurTest(void)
         {
             VoRelayOn();
             // delay 并状态跳转
-            FSM_DELAY_NEXT(st_delay, 3, PWONVBR_RANGESW);
+            FSM_DELAY_NEXT(st_delay, 7, PWONVBR_RANGESW);
         }
     }
 

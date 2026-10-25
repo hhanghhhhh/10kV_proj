@@ -110,5 +110,6 @@ void RangeVolSel(Uint16 range_index);
 void RangeCurSel(Uint16 range_index);
 void RangeLimit(void);
 void CmdImplement(void);
+Uint16 GetCurRangeIndex(float32 current);
 
 #endif /* SRC_TASK_RANGE_H_ */

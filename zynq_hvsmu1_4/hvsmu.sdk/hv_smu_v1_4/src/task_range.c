@@ -18,7 +18,7 @@ float32 rangeVol_buff[RANGE_VOL_NUM] = {400.0f, 1000.0f, 2000.0f, 4000.0f, 7000.
 float32 rangeCur_buff[RANGE_CUR_NUM] = {1e-9f, 1e-8f, 1e-7f, 1e-6f, 1e-5f, 1e-4f,
                                         1e-3f, 5e-3f, 50e-3f};
 float32 vol_adc_full[RANGE_VOL_NUM] = {4.0f, 4.0f, 4.0f, 4.0f, 3.92f, 4.0f};
-float32 vol_dac_full[RANGE_VOL_NUM] = {3.75f, 3.75f, 3.9f, 3.75f, 3.85875f, 3.75f};
+float32 vol_dac_full[RANGE_VOL_NUM] = {3.75f, 3.75f, 3.75f, 3.75f, 3.85875f, 3.75f};
 float32 cur_adc_full[RANGE_CUR_NUM] = {1.0, 3.333, 3.333, 3.92, 3.92, 3.66, 3.66, 3.125, 3.125};
 float32 cur_dac_full[RANGE_CUR_NUM] = {1.0, 3.0, 3.3, 3.582, 3.92, 3.294, 3.66, 2.8125, 3.125};
 
@@ -30,6 +30,30 @@ void InitTaskRange(void)
     memset(&un_currangeset, 0, sizeof(UN_CURRANGESET));
 }
 
+Uint16 GetVolRangeIndex(float32 voltage)
+{
+    Uint16 vol_index;
+
+    for (vol_index = 0; vol_index < RANGE_VOL_NUM - 1; vol_index++)
+    {
+        if (voltage <= rangeVol_buff[vol_index] + 0.1f)
+            break;
+    }
+    return vol_index;
+}
+
+Uint16 GetCurRangeIndex(float32 current)
+{
+    Uint16 cur_index;
+
+    for (cur_index = 0; cur_index < RANGE_CUR_NUM - 1; cur_index++)
+    {
+        if (current <= rangeCur_buff[cur_index] * 1.01f)
+            break;
+    }
+    return cur_index;
+}
+
 void RangeLimit(void)
 {
     ST_SCI_RX_PAR *pPC = &mgmd_stSCIRx;
@@ -37,15 +61,7 @@ void RangeLimit(void)
     ST_RANGE_PARA *pRange_cur = &st_range_cur_use;
 
     float32 requested_vol = (pPC->autorangev == 0) ? pPC->v_range.f32 : pPC->v_set.f32;
-    Uint16 vol_index;
-
-    /* Select the smallest covering range; retain the existing 0.1 V tolerance. */
-    for (vol_index = 0; vol_index < RANGE_VOL_NUM - 1; vol_index++)
-    {
-        if (requested_vol < rangeVol_buff[vol_index] + 0.1f)
-            break;
-    }
-    pRange_vol->range_index_PC = vol_index;
+    pRange_vol->range_index_PC = GetVolRangeIndex(requested_vol);
 
     if (pPC->autorangei == 0)
     {

@@ -91,13 +91,13 @@ typedef struct
     Uint16 cmd_autozero;
     Uint16 autozero_okflag;
 
+    MODBUS_DATA mode0_init_range;
     Uint16 sw_delay_ms;
     Uint16 delay_ref;
     Uint16 delay_discharge;
     Uint16 relay_on_always;
     Uint16 auto_discharge;
     Uint16 auto_discharge_delay; // µ½ 2V ºó delay
-
     Uint16 test_idac_en;
     Uint16 test_idac_a0;
     Uint16 test_idac_a1;
