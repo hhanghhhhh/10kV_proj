@@ -31,6 +31,7 @@ void ScuTimer_IRQ_Handler(void *CallBackRef)
     /* ↓↓↓用户处理↓↓↓ */
 
     TaskComFromPl();
+    TaskAdcRealtime();
 
     InitDeviceState();
     RangeLimit();

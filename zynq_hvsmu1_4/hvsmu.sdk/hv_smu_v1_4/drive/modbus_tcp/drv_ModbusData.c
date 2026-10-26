@@ -35,6 +35,7 @@ void InitModbusData(void)
     p->wave.vol_coef_en = 1;
     p->wave.filter_en = 0;
     p->cfg.disable_all_prot = 0;
+    p->fire_drop_50us = 300; /* 临时参数，暂不放入 eeprom 中*/
     p->coef.enable.u16 = 0xFFFF; // enable all coefficient
 }
 
@@ -203,7 +204,7 @@ void ModbusDataRegister(void)
 
     // 0x5300
     md_rw3_buf[0x00] = &mgmd_stSCIRx.cfg.disable_all_prot;
-    md_rw3_buf[0x01] = &mgmd_stSCIRx.reserve;
+    md_rw3_buf[0x01] = &mgmd_stSCIRx.fire_drop_50us; // 0x5301：每 50us 的电压跌落阈值，单位 V
     md_rw3_buf[0x02] = &mgmd_stSCIRx.reserve;
     // 0x5310
     for (i = 0; i < 40; i++)
@@ -212,7 +213,7 @@ void ModbusDataRegister(void)
     }
 
     // 0x7000
-    // 120 ��
+    // 120 个
     for (i = 0; i < 0x78; i++)
     {
         md_rw4_buf[0x00 + i] = &mgmd_stSCIRx.download.data[i];

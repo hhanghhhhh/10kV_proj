@@ -49,6 +49,7 @@ typedef struct
 extern ST_ADC  st_ADCdata;
 
 void InitTaskAdc(void);
+void TaskAdcRealtime(void);
 void TaskAdcSample(void);
 void TriggerAdcSamp(void);
 Uint16 AdcSampOk(void);

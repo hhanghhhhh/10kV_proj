@@ -446,8 +446,6 @@ void PowerOnNormal(void)
         break;
 
     case PWON_CUR_RANGESW:
-        // 打火保护阈值改为 50V
-        FireRangeSw();
         // 切换到上位机设置的电流档位
         RangeCurSel(pRange_cur->range_index_PC);
         // 电流ref设置为本档位最大值
@@ -614,8 +612,6 @@ void PowerOnCan(void)
         break;
 
     case PWON_CUR_RANGESW:
-        // 打火保护阈值改为 50V
-        FireRangeSw();
         // 切换到上位机设置的电流档位
         RangeCurSel(pRange_cur->range_index_PC);
         // 电流ref设置为本档位最大值
@@ -820,8 +816,6 @@ void PowerOnUph_nometer(void)
         break;
 
     case PWON_CUR_RANGESW:
-        // 打火保护阈值改为 50V
-        FireRangeSw();
         // 切换到上位机设置的电流档位
         RangeCurSel(pRange_cur->range_index_PC);
         // 电流ref设置为本档位最大值

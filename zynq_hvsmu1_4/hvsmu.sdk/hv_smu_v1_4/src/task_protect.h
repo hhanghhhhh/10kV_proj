@@ -32,10 +32,8 @@ typedef struct
     struct
     {
         Uint16  enable;
-        Uint16  rangesw;
-        float32 vol_max;
-        float32 prot_th;
-        float32 drop;
+        Uint16  prev_valid;
+        float32 prev_vol;
     }fire;
 }ST_PROTECT;
 
@@ -46,6 +44,5 @@ void EnableProt_Fire(void);
 void DisableProt_Fire(void);
 void EnableProt_All(void);
 void DisableProt_All(void);
-void FireRangeSw(void);
 
 #endif /* SRC_TASK_PROTECT_H_ */

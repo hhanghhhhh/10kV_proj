@@ -186,6 +186,7 @@ typedef struct
     } download;
 
     Uint16 reserve;
+    Uint16 fire_drop_50us; /* 0x5301：每 50us 的电压跌落阈值，单位 V，仅保存在内存。 */
 } ST_SCI_RX_PAR;
 extern ST_SCI_RX_PAR mgmd_stSCIRx;
 

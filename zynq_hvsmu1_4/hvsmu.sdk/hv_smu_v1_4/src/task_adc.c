@@ -143,21 +143,14 @@ void ADCCoefChoose(void)
 
 
 
-//p->trigger 置1一次，采样一次
-void TaskAdcSample(void)
+/* 在切档或改变输出状态前，换算本次中断读取的实时采样值。
+ * 从 PL 读取的 ADC 数据按进入中断时实际生效的档位换算。
+ */
+void TaskAdcRealtime(void)
 {
     ST_ADC* p = &st_ADCdata;
-    static Uint16 state = 0;
-    static ST_FSM_DELAY st_delay = {0, 0, 0, 0};
-
-    //选择系数
     ADCCoefChoose();
 
-    //采样点计算 根据nPLC来计算，最大6W
-    CalSampandInterval(mgmd_stSCIRx.nplc.f32, SAMP_US, &p->sample_num, &p->interval_cnt);
-    SendSampPara(p->sample_num, p->interval_cnt);
-
-    //实时采样值
     p->cur_AD = st_frompl.cur_ad;
     p->vol_AD = st_frompl.vol_ad;
     p->cur = (float32)p->cur_AD * p->cur_gain * p->cur_k + p->cur_b;
@@ -165,6 +158,19 @@ void TaskAdcSample(void)
 
     mgmd_stSCIRx.vsamp.f32 = p->vol;
     mgmd_stSCIRx.isamp.f32 = p->cur;
+}
+
+//p->trigger 置1一次，采样一次
+void TaskAdcSample(void)
+{
+    ST_ADC* p = &st_ADCdata;
+    static Uint16 state = 0;
+    static ST_FSM_DELAY st_delay = {0, 0, 0, 0};
+
+    //采样点计算 根据nPLC来计算，最大6W
+    CalSampandInterval(mgmd_stSCIRx.nplc.f32, SAMP_US, &p->sample_num, &p->interval_cnt);
+    SendSampPara(p->sample_num, p->interval_cnt);
+
 
     //计算电压1ms平均值
     VolMean1ms();
