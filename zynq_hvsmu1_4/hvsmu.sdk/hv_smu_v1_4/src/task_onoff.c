@@ -355,12 +355,14 @@ void OverTemp(void)
     }
 }
 
+/* 普通模式与 CAN 模式共用上电流程，CAN 仅在脉冲采样阶段追加触发及等待。 */
 void PowerOnNormal(void)
 {
     static ST_FSM_DELAY st_delay = {0, 0, 0, 0};
     static Uint16 state = PWON_IDEL;
     static int32 delay_ms = 0;
     static Uint32 waitok_cnt = 0;
+    static Uint16 can_enabled = 0U;
     ST_RANGE_PARA *pRange_vol = &st_range_vol_use;
     ST_RANGE_PARA *pRange_cur = &st_range_cur_use;
     ST_SCI_RX_PAR *pPC = &mgmd_stSCIRx;
@@ -368,6 +370,8 @@ void PowerOnNormal(void)
     // 下电优先级最高
     if (pwoff_flag == 1)
     {
+        g_can_controller.request_pending = 0U;
+        can_enabled = 0U;
         state = PWON_IDEL;
         return;
     }
@@ -375,6 +379,13 @@ void PowerOnNormal(void)
     if (pPC->power_ctrl == POWER_ON)
     {
         pPC->power_ctrl = POWER_IDEL;
+        // 每次上电锁定本次是否启用 CAN；持续输出保持仅采集本机 ADC。
+        can_enabled = ((pPC->test_mode == MODE_CAN) &&
+                       (pPC->plusewidth.f32 > 0.0F))
+                          ? 1U
+                          : 0U;
+        if (pPC->test_mode == MODE_CAN)
+            pPC->pw_can_flag = 0U;
 
         // 禁止输出，dataok 20 以上表示禁止输出的原因
         // if (output_disable.u16 != 0)
@@ -428,179 +439,13 @@ void PowerOnNormal(void)
         EnableProt_All();
         // 设置电压值
         SetVolRef(pPC->v_set.f32);
-        // 电流ref设置为50mA
+        // 按初始电流参数设置限流值。
         SetCurRef(pPC->mode0_init_range.f32);
         // 波形记录
         if (pPC->wave.enable == 1 && pPC->plusewidth.f32 > 0)
         {
             StartWaveRecord(pPC->plusewidth.f32 * 1000 + 20);
             WaveRangeSaveCur(GetCurRangeIndex(pPC->mode0_init_range.f32));
-            WaveRangeSaveVol(pRange_vol->range_index_PC);
-        }
-        // 计算延时时间
-        delay_ms = pPC->plusewidth.f32 * 1000 - pPC->sw_delay_ms - pPC->nplc.f32 * 20;
-        if (delay_ms < 0)
-            delay_ms = 0;
-        // delay 并状态跳转
-        FSM_DELAY_NEXT(st_delay, pPC->sw_delay_ms, PWON_CUR_RANGESW);
-        break;
-
-    case PWON_CUR_RANGESW:
-        // 切换到上位机设置的电流档位
-        RangeCurSel(pRange_cur->range_index_PC);
-        // 电流ref设置为本档位最大值
-        SetCurRef(st_range_cur_use.full_range);
-
-        if (pPC->wave.enable == 1)
-        {
-            WaveRangeSwitchCur();
-            WaveRangeSaveCur(pRange_cur->range_index_PC);
-        }
-        // 仅上电
-        if (pPC->plusewidth.f32 < 0)
-            state = PWON_UPDATE_TRIGGER;
-        else
-        {
-            // delay 并状态跳转
-            FSM_DELAY_NEXT(st_delay, delay_ms, PWON_SAMP_TRIGGER);
-        }
-        break;
-
-    case PWON_SAMP_TRIGGER:
-        // 采样
-        TriggerAdcSamp();
-        waitok_cnt = 0;
-        state = PWON_WAIT_DATA;
-        break;
-
-    case PWON_WAIT_DATA:
-        // 等待数据ok
-        // 超时判断
-        waitok_cnt++;
-        if (waitok_cnt > Tms_CNT(pPC->nplc.f32 * 1000 + pPC->cfgvalue[EEROM_CONFIG_idss_overtime]))
-        {
-            pPC->dataok = ERR_IDSS_OVERTIME;
-            // 下电
-            pPC->power_ctrl = POWER_OFF;
-            state = PWON_IDEL;
-        }
-        // 数据采样ok，下电
-        if (AdcSampOk() == 1)
-        {
-            pPC->dataok = 1;
-            pPC->isamp_avg.f32 = st_ADCdata.cur_avg;
-            pPC->vsamp_avg.f32 = st_ADCdata.vol_avg;
-            // 下电
-            pPC->power_ctrl = POWER_OFF;
-            state = PWON_IDEL;
-        }
-        break;
-
-    case PWON_UPDATE_TRIGGER:
-        TriggerAdcSamp();
-        state = PWON_UPDATE_WAIT;
-        break;
-
-    case PWON_UPDATE_WAIT:
-        if (AdcSampOk() == 1)
-        {
-            pPC->isamp_avg.f32 = st_ADCdata.cur_avg;
-            pPC->vsamp_avg.f32 = st_ADCdata.vol_avg;
-            state = PWON_UPDATE_TRIGGER;
-        }
-        break;
-
-    default:
-        state = PWON_IDEL;
-        break;
-    }
-}
-
-/* 原正常上电时序的CAN联动版本；正脉宽触发一次，持续输出仅本机采样。 */
-void PowerOnCan(void)
-{
-    static ST_FSM_DELAY st_delay = {0, 0, 0, 0};
-    static Uint16 state = PWON_IDEL;
-    static int32 delay_ms = 0;
-    static Uint32 waitok_cnt = 0;
-    static Uint16 can_enabled = 0U;
-    ST_RANGE_PARA *pRange_vol = &st_range_vol_use;
-    ST_RANGE_PARA *pRange_cur = &st_range_cur_use;
-    ST_SCI_RX_PAR *pPC = &mgmd_stSCIRx;
-
-    // 下电优先级最高
-    if (pwoff_flag == 1)
-    {
-        g_can_controller.request_pending = 0U;
-        state = PWON_IDEL;
-        return;
-    }
-
-    if (pPC->power_ctrl == POWER_ON)
-    {
-        pPC->power_ctrl = POWER_IDEL;
-        pPC->pw_can_flag = 0U;
-        can_enabled = (pPC->plusewidth.f32 > 0.0F) ? 1U : 0U;
-
-        // 禁止输出，dataok 20 以上表示禁止输出的原因
-        // if (output_disable.u16 != 0)
-        // {
-        //     pPC->dataok = 20 + output_disable.u16;
-        //     pPC->isamp_avg.f32 = 0;
-        //     pPC->vsamp_avg.f32 = 0;
-        //     state = PWON_IDEL;
-        //     return;
-        // }
-
-        pwon_flag = 1;
-        // 允许输出
-        EnOut();
-        // 清零变量
-        pPC->dataok = 0;
-        pPC->isamp_avg.f32 = 0;
-        pPC->vsamp_avg.f32 = 0;
-        waitok_cnt = 0;
-        // 打开输出继电器
-        if (pPC->relay_on_always == 1 && ReadRelay() == 1)
-        {
-            state = PWON_VOL_RANGESW;
-        }
-        else
-        {
-            VoRelayOn();
-            // delay 并状态跳转
-            FSM_DELAY_NEXT(st_delay, 7, PWON_VOL_RANGESW);
-        }
-    }
-
-    switch (state)
-    {
-    case PWON_IDEL:
-        break;
-
-    case S_FSM_DELAY:
-        FSM_DELAY_FUNC(st_delay);
-        break;
-
-    case PWON_VOL_RANGESW:
-        // 切换到上位机设置电压档位
-        RangeVolSel(pRange_vol->range_index_PC);
-        RangeCurSel(RANGE_CUR_50mA_INDEX);
-        state = PWON_SET_REF;
-        break;
-
-    case PWON_SET_REF:
-        // 开启保护
-        EnableProt_All();
-        // 设置电压值
-        SetVolRef(pPC->v_set.f32);
-        // 电流ref设置为50mA
-        SetCurRef(50e-3);
-        // 波形记录
-        if (pPC->wave.enable == 1 && pPC->plusewidth.f32 > 0)
-        {
-            StartWaveRecord(pPC->plusewidth.f32 * 1000 + 20);
-            WaveRangeSaveCur(RANGE_CUR_50mA_INDEX);
             WaveRangeSaveVol(pRange_vol->range_index_PC);
         }
         // 计算延时时间
@@ -673,208 +518,19 @@ void PowerOnCan(void)
         break;
 
     case PWON_WAIT_DATA:
-        waitok_cnt++;
-        if ((AdcSampOk() == 1U) &&
-            ((can_enabled == 0U) || (g_can_controller.reply_received != 0U)))
+        if (can_enabled == 0U)
         {
-            pPC->dataok = ERR_OK;
-            pPC->isamp_avg.f32 = st_ADCdata.cur_avg;
-            pPC->vsamp_avg.f32 = st_ADCdata.vol_avg;
-            if (can_enabled != 0U)
+            // 等待数据ok
+            // 超时判断
+            waitok_cnt++;
+            if (waitok_cnt > Tms_CNT(pPC->nplc.f32 * 1000 + pPC->cfgvalue[EEROM_CONFIG_idss_overtime]))
             {
-                pPC->pw_can_flag = 1U;
-            }
-            pPC->power_ctrl = POWER_OFF;
-            state = PWON_IDEL;
-        }
-        else if ((can_enabled != 0U) &&
-                 (g_can_controller.reply_received == 0U) &&
-                 (waitok_cnt >= Tms_CNT(CAN_CONTROLLER_REPLY_TIMEOUT_MS)))
-        {
-            pPC->pw_can_flag = 3U;
-            pPC->power_ctrl = POWER_OFF;
-            state = PWON_IDEL;
-        }
-        else if (waitok_cnt >
-                 Tms_CNT(pPC->nplc.f32 * 1000 +
-                         pPC->cfgvalue[EEROM_CONFIG_idss_overtime]))
-        {
-            pPC->dataok = ERR_IDSS_OVERTIME;
-            pPC->power_ctrl = POWER_OFF;
-            state = PWON_IDEL;
-        }
-        break;
-
-    case PWON_UPDATE_TRIGGER:
-        TriggerAdcSamp();
-        state = PWON_UPDATE_WAIT;
-        break;
-
-    case PWON_UPDATE_WAIT:
-        if (AdcSampOk() == 1)
-        {
-            pPC->isamp_avg.f32 = st_ADCdata.cur_avg;
-            pPC->vsamp_avg.f32 = st_ADCdata.vol_avg;
-            state = PWON_UPDATE_TRIGGER;
-        }
-        break;
-
-    default:
-        state = PWON_IDEL;
-        break;
-    }
-}
-
-void PowerOnUph_nometer(void)
-{
-    static ST_FSM_DELAY st_delay = {0, 0, 0, 0};
-    static Uint16 state = PWON_IDEL;
-    static int32 delay_ms = 0;
-    static Uint32 waitok_cnt = 0;
-    ST_RANGE_PARA *pRange_vol = &st_range_vol_use;
-    ST_RANGE_PARA *pRange_cur = &st_range_cur_use;
-    ST_SCI_RX_PAR *pPC = &mgmd_stSCIRx;
-
-    // 下电优先级最高
-    if (pwoff_flag == 1)
-    {
-        state = PWON_IDEL;
-        return;
-    }
-
-    if (pPC->power_ctrl == POWER_ON)
-    {
-        pPC->power_ctrl = POWER_IDEL;
-
-        // 禁止输出，dataok 20 以上表示禁止输出的原因
-        if (output_disable.u16 != 0)
-        {
-            pPC->dataok = 20 + output_disable.u16;
-            pPC->isamp_avg.f32 = 0;
-            pPC->vsamp_avg.f32 = 0;
-            state = PWON_IDEL;
-            return;
-        }
-
-        pwon_flag = 1;
-        // 允许输出
-        EnOut();
-        // 清零变量
-        pPC->dataok = 0;
-        pPC->isamp_avg.f32 = 0;
-        pPC->vsamp_avg.f32 = 0;
-        waitok_cnt = 0;
-        // 打开输出继电器
-        if (pPC->relay_on_always == 1 && ReadRelay() == 1)
-        {
-            state = PWON_VOL_RANGESW;
-        }
-        else
-        {
-            VoRelayOn();
-            // delay 并状态跳转
-            FSM_DELAY_NEXT(st_delay, 7, PWON_VOL_RANGESW);
-        }
-    }
-
-    switch (state)
-    {
-    case PWON_IDEL:
-        break;
-
-    case S_FSM_DELAY:
-        FSM_DELAY_FUNC(st_delay);
-        break;
-
-    case PWON_VOL_RANGESW:
-        // 切换到上位机设置电压档位
-        RangeVolSel(pRange_vol->range_index_PC);
-        RangeCurSel(RANGE_CUR_50mA_INDEX);
-        state = PWON_SET_REF;
-        break;
-
-    case PWON_SET_REF:
-        // 开启保护
-        EnableProt_All();
-        // 设置电压值
-        SetVolRef(pPC->v_set.f32);
-        // 电流ref设置为50mA
-        SetCurRef(50e-3);
-        // 波形记录
-        if (pPC->wave.enable == 1 && pPC->plusewidth.f32 > 0)
-        {
-            StartWaveRecord(pPC->plusewidth.f32 * 1000 + 20);
-            WaveRangeSaveCur(RANGE_CUR_50mA_INDEX);
-            WaveRangeSaveVol(pRange_vol->range_index_PC);
-        }
-        // 计算延时时间
-        delay_ms = pPC->plusewidth.f32 * 1000 - pPC->sw_delay_ms - pPC->nplc.f32 * 20;
-        if (delay_ms < 0)
-            delay_ms = 0;
-        // delay 并状态跳转
-        FSM_DELAY_NEXT(st_delay, pPC->sw_delay_ms, PWON_CUR_RANGESW);
-        break;
-
-    case PWON_CUR_RANGESW:
-        // 切换到上位机设置的电流档位
-        RangeCurSel(pRange_cur->range_index_PC);
-        // 电流ref设置为本档位最大值
-        SetCurRef(st_range_cur_use.full_range);
-
-        if (pPC->wave.enable == 1)
-        {
-            WaveRangeSwitchCur();
-            WaveRangeSaveCur(pRange_cur->range_index_PC);
-        }
-        // 仅上电
-        if (pPC->plusewidth.f32 < 0)
-            state = PWON_UPDATE_TRIGGER;
-        else
-        {
-            // delay 并状态跳转
-            FSM_DELAY_NEXT(st_delay, delay_ms, PWON_SAMP_TRIGGER);
-        }
-        break;
-
-    case PWON_SAMP_TRIGGER:
-        // 采样
-        TriggerAdcSamp();
-        // 触发表采样
-        if (mgmd_stSCIRx.trigger_meter == 1)
-        {
-            TriggerMeter();
-        }
-        waitok_cnt = 0;
-        state = PWON_WAIT_DATA;
-        break;
-
-    case PWON_WAIT_DATA:
-        // 等待数据ok
-        // 超时判断
-        waitok_cnt++;
-        if (waitok_cnt > Tms_CNT(pPC->nplc.f32 * 1000 + pPC->cfgvalue[EEROM_CONFIG_idss_overtime]))
-        {
-            pPC->dataok = ERR_IDSS_OVERTIME;
-            // 下电
-            pPC->power_ctrl = POWER_OFF;
-            state = PWON_IDEL;
-        }
-        // 数据采样ok，下电
-        if (mgmd_stSCIRx.trigger_meter == 1)
-        {
-            if (revc_meter_flag == 1 && AdcSampOk() == 1)
-            {
-                // revc_meter_rst 结果
-                pPC->dataok = 1;
-                pPC->isamp_avg.f32 = st_ADCdata.cur_avg;
-                pPC->vsamp_avg.f32 = st_ADCdata.vol_avg;
+                pPC->dataok = ERR_IDSS_OVERTIME;
                 // 下电
                 pPC->power_ctrl = POWER_OFF;
                 state = PWON_IDEL;
             }
-        }
-        else
-        {
+            // 数据采样ok，下电
             if (AdcSampOk() == 1)
             {
                 pPC->dataok = 1;
@@ -885,172 +541,35 @@ void PowerOnUph_nometer(void)
                 state = PWON_IDEL;
             }
         }
-
-        break;
-
-    case PWON_UPDATE_TRIGGER:
-        TriggerAdcSamp();
-        state = PWON_UPDATE_WAIT;
-        break;
-
-    case PWON_UPDATE_WAIT:
-        if (AdcSampOk() == 1)
-        {
-            pPC->isamp_avg.f32 = st_ADCdata.cur_avg;
-            pPC->vsamp_avg.f32 = st_ADCdata.vol_avg;
-            state = PWON_UPDATE_TRIGGER;
-        }
-        break;
-
-    default:
-        state = PWON_IDEL;
-        break;
-    }
-}
-
-void PowerOnUph(void)
-{
-    static ST_FSM_DELAY st_delay = {0, 0, 0, 0};
-    static Uint16 state = PWON_IDEL;
-    static int32 delay_ms = 0;
-    static Uint32 waitok_cnt = 0;
-    ST_RANGE_PARA *pRange_vol = &st_range_vol_use;
-    ST_RANGE_PARA *pRange_cur = &st_range_cur_use;
-    ST_SCI_RX_PAR *pPC = &mgmd_stSCIRx;
-
-    // 下电优先级最高
-    if (pwoff_flag == 1)
-    {
-        state = PWON_IDEL;
-        return;
-    }
-
-    if (pPC->power_ctrl == POWER_ON)
-    {
-        pPC->power_ctrl = POWER_IDEL;
-
-        // 禁止输出，dataok 20 以上表示禁止输出的原因
-        if (output_disable.u16 != 0)
-        {
-            pPC->dataok = 20 + output_disable.u16;
-            pPC->isamp_avg.f32 = 0;
-            pPC->vsamp_avg.f32 = 0;
-            state = PWON_IDEL;
-            return;
-        }
-
-        pwon_flag = 1;
-        // 允许输出
-        EnOut();
-        // 清零变量
-        pPC->dataok = 0;
-        pPC->isamp_avg.f32 = 0;
-        pPC->vsamp_avg.f32 = 0;
-        waitok_cnt = 0;
-        // 打开输出继电器
-        if (pPC->relay_on_always == 1 && ReadRelay() == 1)
-        {
-            state = PWON_VOL_RANGESW;
-        }
         else
         {
-            VoRelayOn();
-            // delay 并状态跳转
-            FSM_DELAY_NEXT(st_delay, 7, PWON_VOL_RANGESW);
-        }
-    }
-
-    switch (state)
-    {
-    case PWON_IDEL:
-        break;
-
-    case S_FSM_DELAY:
-        FSM_DELAY_FUNC(st_delay);
-        break;
-
-    case PWON_VOL_RANGESW:
-        // 切换到上位机设置电压档位
-        // 电流默认用  50mA 档位
-        RangeVolSel(pRange_vol->range_index_PC);
-        RangeCurSel(RANGE_CUR_50mA_INDEX);
-        state = PWON_SET_REF;
-        break;
-
-    case PWON_SET_REF:
-        // 开启保护
-        EnableProt_All();
-        // 设置电压值
-        SetVolRef(pPC->v_set.f32);
-        // 电流ref设置为50mA
-        SetCurRef(50e-3);
-        // 波形记录
-        if (pPC->wave.enable == 1 && pPC->plusewidth.f32 > 0)
-        {
-            StartWaveRecord(pPC->plusewidth.f32 * 1000 + 20);
-            WaveRangeSaveCur(RANGE_CUR_50mA_INDEX);
-            WaveRangeSaveVol(pRange_vol->range_index_PC);
-        }
-        // 计算延时时间
-        delay_ms = pPC->plusewidth.f32 * 1000 - pPC->nplc.f32 * 20;
-        if (delay_ms < 0)
-            delay_ms = 0;
-
-        // 仅上电
-        if (pPC->plusewidth.f32 < 0)
-            state = PWON_UPDATE_TRIGGER;
-        else
-        {
-            // delay 并状态跳转
-            FSM_DELAY_NEXT(st_delay, delay_ms, PWON_SAMP_TRIGGER);
-        }
-        break;
-
-    case PWON_SAMP_TRIGGER:
-        // 采样
-        TriggerAdcSamp();
-        // 触发表采样
-        if (mgmd_stSCIRx.trigger_meter == 1)
-        {
-            TriggerMeter();
-        }
-        waitok_cnt = 0;
-        state = PWON_WAIT_DATA;
-        break;
-
-    case PWON_WAIT_DATA:
-        // 等待数据ok
-        // 超时判断
-        waitok_cnt++;
-        if (waitok_cnt > Tms_CNT(pPC->nplc.f32 * 1000 + pPC->cfgvalue[EEROM_CONFIG_idss_overtime]))
-        {
-            pPC->dataok = ERR_IDSS_OVERTIME;
-            // 下电
-            pPC->power_ctrl = POWER_OFF;
-            state = PWON_IDEL;
-        }
-        // 数据采样ok，下电
-        if (mgmd_stSCIRx.trigger_meter == 1)
-        {
-            if (revc_meter_flag == 1 && AdcSampOk() == 1)
+            waitok_cnt++;
+            if ((AdcSampOk() == 1U) &&
+                ((can_enabled == 0U) || (g_can_controller.reply_received != 0U)))
             {
-                // revc_meter_rst 结果
-                pPC->dataok = 1;
+                pPC->dataok = ERR_OK;
                 pPC->isamp_avg.f32 = st_ADCdata.cur_avg;
                 pPC->vsamp_avg.f32 = st_ADCdata.vol_avg;
-                // 下电
+                if (can_enabled != 0U)
+                {
+                    pPC->pw_can_flag = 1U;
+                }
                 pPC->power_ctrl = POWER_OFF;
                 state = PWON_IDEL;
             }
-        }
-        else
-        {
-            if (AdcSampOk() == 1)
+            else if ((can_enabled != 0U) &&
+                     (g_can_controller.reply_received == 0U) &&
+                     (waitok_cnt >= Tms_CNT(CAN_CONTROLLER_REPLY_TIMEOUT_MS)))
             {
-                pPC->dataok = 1;
-                pPC->isamp_avg.f32 = st_ADCdata.cur_avg;
-                pPC->vsamp_avg.f32 = st_ADCdata.vol_avg;
-                // 下电
+                pPC->pw_can_flag = 3U;
+                pPC->power_ctrl = POWER_OFF;
+                state = PWON_IDEL;
+            }
+            else if (waitok_cnt >
+                     Tms_CNT(pPC->nplc.f32 * 1000 +
+                             pPC->cfgvalue[EEROM_CONFIG_idss_overtime]))
+            {
+                pPC->dataok = ERR_IDSS_OVERTIME;
                 pPC->power_ctrl = POWER_OFF;
                 state = PWON_IDEL;
             }

@@ -42,10 +42,6 @@ void ScuTimer_IRQ_Handler(void *CallBackRef)
         PowerOnCurTest();
     else if (mgmd_stSCIRx.test_mode == MODE_VBR)
         PowerOnVbr();
-    else if (mgmd_stSCIRx.test_mode == MODE_UPH)
-        PowerOnUph_nometer();
-    else if (mgmd_stSCIRx.test_mode == MODE_CAN)
-        PowerOnCan();
     else
         PowerOnNormal();
 
