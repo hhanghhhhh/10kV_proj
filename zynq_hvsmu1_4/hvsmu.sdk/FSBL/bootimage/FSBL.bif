@@ -1,0 +1,7 @@
+//arch = zynq; split = false; format = BIN
+the_ROM_image:
+{
+	[bootloader]D:\05-work\30_10kv\00_git\10kV_proj\zynq_hvsmu1_4\hvsmu.sdk\FSBL\Debug\FSBL.elf
+	D:\05-work\30_10kv\00_git\10kV_proj\zynq_hvsmu1_4\hvsmu.sdk\top_hw_platform_0\top.bit
+	D:\05-work\30_10kv\00_git\10kV_proj\zynq_hvsmu1_4\hvsmu.sdk\hv_smu_v1_4\Debug\hv_smu_v1_4.elf
+}
