@@ -14,8 +14,8 @@ Uint8 rxsize[MAX_SOCK_NUM] = {2,2,2,2,2,2,2,2};		// 选择8个Socket每个Socket
 
 
 
-Uint8 local_mac[6]={0x00,0x08,0xdc,0x11,0x11,0x80};
-Uint8 local_lip[4]={192,168,1,80};
+Uint8 local_mac[6]={0x00,0x08,0xdc,0x11,0x11,0x72};
+Uint8 local_lip[4]={192,168,1,72};
 Uint8 local_sub[4]={255,255,255,0};
 Uint8 local_gw[4]={192,168,1,1};
 Uint8 local_dns[4]={8,8,8,8};
