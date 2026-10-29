@@ -104,6 +104,8 @@ typedef struct
     Uint16 test_vdac_en;
     Uint16 test_vdac_a0;
     Uint16 test_vdac_a1;
+    Uint16 test_bw1;
+    Uint16 test_bw2;
 
     Uint16 dis_main_power;
     // ‘¥±Ì∑÷¿Î

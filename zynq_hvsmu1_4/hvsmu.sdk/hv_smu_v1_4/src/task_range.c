@@ -191,4 +191,7 @@ void CmdImplement(void)
     st_topl.cmd.bit.vdac_slowen = pPC->test_vdac_en;
     st_topl.cmd.bit.vdac_slow_a0 = pPC->test_vdac_a0;
     st_topl.cmd.bit.vdac_slow_a1 = pPC->test_vdac_a1;
+
+    st_topl.cmd.bit.cmode_bw1_n = pPC->test_bw1;
+    st_topl.cmd.bit.cmode_bw2_n = pPC->test_bw2;
 }

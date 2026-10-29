@@ -35,8 +35,11 @@ void InitModbusData(void)
     p->wave.vol_coef_en = 1;
     p->wave.filter_en = 0;
     p->cfg.disable_all_prot = 0;
-    p->fire_drop_50us = 300; /* 临时参数，暂不放入 eeprom 中*/
+    p->fire_drop_50us = 300;     /* 临时参数，暂不放入 eeprom 中*/
     p->coef.enable.u16 = 0xFFFF; // enable all coefficient
+
+    p->test_bw1 = 0;
+    p->test_bw2 = 0;
 }
 
 extern Uint16 main_power_ok, main_power_reset;
@@ -150,6 +153,8 @@ void ModbusDataRegister(void)
     md_w1_buf[0x1D] = &mgmd_stSCIRx.auto_discharge_delay;
     md_w1_buf[0x1E] = &mgmd_stSCIRx.mode0_init_range.u16.H;
     md_w1_buf[0x1F] = &mgmd_stSCIRx.mode0_init_range.u16.L;
+    md_w1_buf[0x20] = &mgmd_stSCIRx.test_bw1;
+    md_w1_buf[0x21] = &mgmd_stSCIRx.test_bw2;
     //...
     md_w1_buf[0x27] = &mgmd_stSCIRx.wave.enable;
     md_w1_buf[0x28] = &mgmd_stSCIRx.wave.trigger;
