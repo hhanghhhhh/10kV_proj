@@ -654,7 +654,7 @@ void PowerOff(void)
     case PWOFF_RANGESW:
         DischargeOff();
         // 切换档位为默认值
-        RangeVolSel(RANGE_VOL_400V_INDEX);
+        // RangeVolSel(RANGE_VOL_400V_INDEX);
         RangeCurSel(RANGE_CUR_50mA_INDEX);
         // 关闭继电器
         if (pPC->relay_on_always == 0)
