@@ -48,6 +48,9 @@
 #define PWON_PWOFF 9
 #define PWON_UPDATE_TRIGGER 10
 #define PWON_UPDATE_WAIT 11
+#define PWON_CAN_WAIT_TX (12U)
+#define PWON_ENOUT 13
+#define PWON_RELAY_ON 14
 
 #define PWOFF_IDEL 0
 #define PWOFF_SET_REF 1
@@ -65,6 +68,12 @@
 #define PWONVBR_DETECT_VBR 6
 #define PWONVBR_DELAY_PLUSEWIDTH 7
 #define PWONVBR_PWOFF 8
+#define PWONVBR_ENOUT 9
+#define PWONVBR_RELAY_ON 10
+#define PWONVBR_SAMP_TRIGGER 11
+#define PWONVBR_WAIT_DATA 12
+#define PWONVBR_UPDATE_TRIGGER 13
+#define PWONVBR_UPDATE_WAIT 14
 
 #define ERR_OK 1            // ok
 #define ERR_IDSS_OVERTIME 2 // idss²ÉÑù³¬Ê±

@@ -7,8 +7,6 @@
 #include "COMMON.h"
 #include "drv_can_controller.h"
 
-#define PWON_CAN_WAIT_TX (12U)
-
 Uint16 pwoff_flag = 0;
 Uint16 pwon_flag = 0;
 
@@ -398,24 +396,13 @@ void PowerOnNormal(void)
         // }
 
         pwon_flag = 1;
-        // 允许输出
-        EnOut();
+
         // 清零变量
         pPC->dataok = 0;
         pPC->isamp_avg.f32 = 0;
         pPC->vsamp_avg.f32 = 0;
         waitok_cnt = 0;
-        // 打开输出继电器
-        if (pPC->relay_on_always == 1 && ReadRelay() == 1)
-        {
-            state = PWON_VOL_RANGESW;
-        }
-        else
-        {
-            VoRelayOn();
-            // delay 并状态跳转
-            FSM_DELAY_NEXT(st_delay, 7, PWON_VOL_RANGESW);
-        }
+        state = PWON_VOL_RANGESW;
     }
 
     switch (state)
@@ -431,6 +418,26 @@ void PowerOnNormal(void)
         // 切换到上位机设置电压档位
         RangeVolSel(pRange_vol->range_index_PC);
         RangeCurSel(GetCurRangeIndex(pPC->mode0_init_range.f32));
+        state = PWON_RELAY_ON;
+        break;
+
+    case PWON_RELAY_ON:
+        // 打开输出继电器
+        if (pPC->relay_on_always == 1 && ReadRelay() == 1)
+        {
+            state = PWON_ENOUT;
+        }
+        else
+        {
+            VoRelayOn();
+            // delay 并状态跳转
+            FSM_DELAY_NEXT(st_delay, 7, PWON_ENOUT);
+        }
+        break;
+
+    case PWON_ENOUT:
+        // 允许输出
+        EnOut();
         state = PWON_SET_REF;
         break;
 
@@ -711,8 +718,7 @@ void PowerOnVbr(void)
         // }
 
         pwon_flag = 1;
-        // 允许输出
-        EnOut();
+
         // 清零变量
         pPC->dataok = 0;
         pPC->isamp_avg.f32 = 0;
@@ -724,17 +730,8 @@ void PowerOnVbr(void)
         vbr_pwon_cnt = 0;
         last_vol10ms = 0;
         last_vol1ms = 0;
-        // 打开输出继电器
-        if (pPC->relay_on_always == 1 && ReadRelay() == 1)
-        {
-            state = PWONVBR_RANGESW;
-        }
-        else
-        {
-            VoRelayOn();
-            // delay 并状态跳转
-            FSM_DELAY_NEXT(st_delay, 7, PWONVBR_RANGESW);
-        }
+
+        state = PWONVBR_RANGESW;
     }
 
     switch (state)
@@ -750,6 +747,26 @@ void PowerOnVbr(void)
         // 切换档位为上位机设置值
         RangeVolSel(pRange_vol->range_index_PC);
         RangeCurSel(pRange_cur->range_index_PC);
+        state = PWONVBR_RELAY_ON;
+        break;
+
+    case PWONVBR_RELAY_ON:
+        // 打开输出继电器
+        if (pPC->relay_on_always == 1 && ReadRelay() == 1)
+        {
+            state = PWONVBR_ENOUT;
+        }
+        else
+        {
+            VoRelayOn();
+            // delay 并状态跳转
+            FSM_DELAY_NEXT(st_delay, 7, PWONVBR_ENOUT);
+        }
+        break;
+
+    case PWONVBR_ENOUT:
+        // 允许输出
+        EnOut();
         state = PWONVBR_SETCUR;
         break;
 
@@ -861,7 +878,7 @@ void PowerOnCurTest(void)
     // 下电优先级最高
     if (pwoff_flag == 1)
     {
-        state = PWON_IDEL;
+        state = PWONVBR_IDEL;
         return;
     }
 
@@ -879,23 +896,13 @@ void PowerOnCurTest(void)
         // }
 
         pwon_flag = 1;
-        // 允许输出
-        EnOut();
+
         // 清零变量
         pPC->dataok = 0;
         pPC->isamp_avg.f32 = 0;
         pPC->vsamp_avg.f32 = 0;
-        // 打开输出继电器
-        if (pPC->relay_on_always == 1 && ReadRelay() == 1)
-        {
-            state = PWONVBR_RANGESW;
-        }
-        else
-        {
-            VoRelayOn();
-            // delay 并状态跳转
-            FSM_DELAY_NEXT(st_delay, 7, PWONVBR_RANGESW);
-        }
+
+        state = PWONVBR_RANGESW;
     }
 
     switch (state)
@@ -911,6 +918,26 @@ void PowerOnCurTest(void)
         // 切换档位为上位机设置值
         RangeVolSel(pRange_vol->range_index_PC);
         RangeCurSel(pRange_cur->range_index_PC);
+        state = PWONVBR_RELAY_ON;
+        break;
+
+    case PWONVBR_RELAY_ON:
+        // 打开输出继电器
+        if (pPC->relay_on_always == 1 && ReadRelay() == 1)
+        {
+            state = PWONVBR_ENOUT;
+        }
+        else
+        {
+            VoRelayOn();
+            // delay 并状态跳转
+            FSM_DELAY_NEXT(st_delay, 7, PWONVBR_ENOUT);
+        }
+        break;
+
+    case PWONVBR_ENOUT:
+        // 允许输出
+        EnOut();
         state = PWONVBR_SETCUR;
         break;
 
@@ -929,7 +956,7 @@ void PowerOnCurTest(void)
         }
         // 仅上电
         if (pPC->plusewidth.f32 < 0)
-            state = PWON_UPDATE_TRIGGER;
+            state = PWONVBR_UPDATE_TRIGGER;
         else
         {
             // 计算延时时间
@@ -937,17 +964,17 @@ void PowerOnCurTest(void)
             if (delay_ms < 0)
                 delay_ms = 0;
             // delay 并状态跳转
-            FSM_DELAY_NEXT(st_delay, delay_ms, PWON_SAMP_TRIGGER);
+            FSM_DELAY_NEXT(st_delay, delay_ms, PWONVBR_SAMP_TRIGGER);
         }
         break;
 
-    case PWON_SAMP_TRIGGER:
+    case PWONVBR_SAMP_TRIGGER:
         // 采样
         TriggerAdcSamp();
-        state = PWON_WAIT_DATA;
+        state = PWONVBR_WAIT_DATA;
         break;
 
-    case PWON_WAIT_DATA:
+    case PWONVBR_WAIT_DATA:
         // 等待数据ok
         // 数据采样ok，下电
         if (AdcSampOk() == 1)
@@ -957,25 +984,25 @@ void PowerOnCurTest(void)
             pPC->vsamp_avg.f32 = st_ADCdata.vol_avg;
             // 下电
             pPC->power_ctrl = POWER_OFF;
-            state = PWON_IDEL;
+            state = PWONVBR_IDEL;
         }
         break;
 
-    case PWON_UPDATE_TRIGGER:
+    case PWONVBR_UPDATE_TRIGGER:
         TriggerAdcSamp();
-        state = PWON_UPDATE_WAIT;
+        state = PWONVBR_UPDATE_WAIT;
         break;
 
-    case PWON_UPDATE_WAIT:
+    case PWONVBR_UPDATE_WAIT:
         if (AdcSampOk() == 1)
         {
             pPC->isamp_avg.f32 = st_ADCdata.cur_avg;
             pPC->vsamp_avg.f32 = st_ADCdata.vol_avg;
-            state = PWON_UPDATE_TRIGGER;
+            state = PWONVBR_UPDATE_TRIGGER;
         }
         break;
     default:
-        state = PWON_IDEL;
+        state = PWONVBR_IDEL;
         break;
     }
 }
